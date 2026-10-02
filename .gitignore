@@ -1,0 +1,40 @@
+# Dependências e arquivos gerados
+node_modules/
+dist/
+dist-ssr/
+build/
+coverage/
+.vite/
+.cache/
+*.tsbuildinfo
+
+# Logs e temporários
+logs/
+*.log
+*.tmp
+*.temp
+*.local
+
+# Configuração local e credenciais (manter exemplos sem segredos)
+.env
+.env.*
+!.env.example
+backend/secrets/
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Configurações locais de ferramentas e editores
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.codex/
+.agents/
+.aws/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Captura de diagnóstico local; não ignorar os assets da aplicação
+/vonage-sandbox-etapa-manual.png

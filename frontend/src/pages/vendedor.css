@@ -1,0 +1,174 @@
+/* Seção de cadastro de empresa */
+.section-title {
+  margin: 30px;
+  font-size: 1.8rem;
+  color: #1F3A60;
+  text-align: center;
+  font-weight: bold;
+
+}
+
+/* Formulário de nova empresa */
+.company-form {
+  margin: 0 30px 30px 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #f8f9fb;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.company-form .form-input {
+  flex: 1;
+  min-width: 250px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
+  transition: border 0.2s ease;
+}
+
+
+.company-form .form-input:focus {
+  border-color: #1F3A60;
+  outline: none;
+}
+
+.company-form .form-button {
+  background-color: #1F3A60;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.company-form .form-button:hover {
+  background-color: #2a4f85;
+}
+
+.company-form .form-button:focus {
+  outline: none;
+}
+
+.doc-type-selector {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.doc-type-selector label {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+
+
+/* Campo de busca */
+.search-input {
+  margin: 0 30px 20px 30px;
+  width: calc(100% - 60px);
+  padding: 12px 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.descer {
+  margin-bottom: 10px;
+}
+
+.search-input:focus {
+  border-color: #1F3A60;
+  outline: none;
+}
+
+/* Lista de empresas */
+.company-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 30px 40px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.company-item {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Info da empresa */
+.company-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.company-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Edição */
+.editing-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.editing-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* Botões */
+button {
+  outline: none;
+}
+
+.btn-edit,
+.btn-save,
+.btn-cancel {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.btn-edit {
+  background-color: #1F3A60;
+  color: #fff;
+}
+.btn-edit:hover { background-color: #2a4f85; }
+
+.btn-save {
+  background-color: #198754;
+  color: #fff;
+  margin-right: 10px;
+}
+.btn-save:hover { background-color: #157347; }
+
+.btn-cancel {
+  background-color: #6c757d;
+  color: #fff;
+}
+.btn-cancel:hover { background-color: #5c636a; }
+
+.form {
+    background-color: #b0b0b0;
+    margin: 30px;
+    border-radius: 20px;
+    padding: 20px;
+}

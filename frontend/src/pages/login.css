@@ -1,0 +1,146 @@
+/* Container principal */
+.login-container {
+  display: flex;
+  height: calc(100vh - 72px); /* ocupa a área restante abaixo do header */
+  width: 100%;
+  font-family: Arial, sans-serif;
+}
+
+/* Área da imagem à esquerda */
+.login-image-container {
+  width: 40%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.login-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  box-shadow: 10px 10px 10px rgba(0,0,0,0.5);
+}
+
+/* Área do formulário à direita */
+.login-form-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 30px;
+  position: relative;
+  background-color: #f9f9f9;
+}
+
+
+.login-form-container h1 {
+  font-size: 36px;
+  color: #1F3A60;
+  margin-bottom: 40px;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-form input {
+  padding: 15px 20px;
+  font-size: 16px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  transition: border 0.3s;
+}
+
+.login-form input:focus {
+  border-color: #1F3A60;
+}
+
+.login-form button {
+  padding: 15px 20px;
+  font-size: 18px;
+  background-color: #1F3A60;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.login-form button:hover {
+  background-color: #2a4f85;
+}
+
+.login-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-password-field { position: relative; }
+.login-password-field input { width: 100%; padding-right: 54px; }
+.login-form .login-password-toggle { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); display: grid; place-items: center; width: 40px; height: 40px; padding: 8px; background: transparent; color: #667085; transition: background-color 160ms; }
+.login-form .login-password-toggle:hover:not(:disabled) { background: #edf2f9; color: #173b68; }
+.login-form .login-password-toggle:focus-visible { outline: 2px solid #173b68; outline-offset: 1px; }
+
+/* Botão Sobre */
+.about-button {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  background-color: #1F3A60;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  font-size: 20px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.about-button:hover {
+  background-color: #2a4f85;
+}
+
+/* Modal genérico */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.modal-content p,
+.modal-content h2 {
+  margin-bottom: 20px;
+}
+
+.modal-content .form-button {
+  padding: 10px 20px;
+  background-color: #1F3A60;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.modal-content .form-button:hover {
+  background-color: #2a4f85;
+}

@@ -1,0 +1,321 @@
+/* ------------------- */
+/* BOTÕES DE NAVEGAÇÃO */
+/* ------------------- */
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 20px 30px; /* espaçamento lateral */
+}
+
+.nav-buttons button {
+  padding: 10px 18px;
+  border: 2px solid #1F3A60;
+  background: #fff;
+  color: #1F3A60;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-buttons button:hover {
+  background: #f0f8ff;
+}
+
+.nav-buttons button.active {
+  background: #1F3A60;
+  color: #fff;
+}
+
+/* ------------------- */
+/* SEÇÃO VERIFICAR TOKEN */
+/* ------------------- */
+/* Container principal da verificação */
+.verificar.tokens {
+  display: flex;
+  flex-direction: column;
+  align-items: center;       /* centraliza na largura */
+  justify-content: center;
+  margin-top: 50px;          /* distância do topo */
+  padding: 30px;
+  background: #ffffff;
+  border: 2px solid #1F3A60;
+  border-radius: 12px;
+  width: 500px;              /* largura fixa para destaque */
+  max-width: 90%;            /* responsivo em telas menores */
+  margin-left: auto;
+  margin-bottom: 30px;
+  transition: all 1s;
+  margin-right: auto;
+  box-shadow: 0px 6px 15px rgba(0,0,0,0.15);
+}
+
+.verificar.tokens:hover {
+    transform: scale(1.02);
+}
+
+/* Título */
+.verificar.tokens h2 {
+  font-size: 24px;
+  color: #1F3A60;
+  margin-bottom: 20px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Formulário */
+.verificar.tokens form {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+/* Input */
+.verificar.tokens input[type="text"] {
+  flex: 1;
+  padding: 14px 18px;
+  font-size: 18px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  text-align: center;
+  letter-spacing: 2px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.verificar.tokens input[type="text"]:focus {
+  border-color: #1F3A60;
+  box-shadow: 0px 0px 6px rgba(0, 123, 255, 0.4);
+}
+
+/* Botão */
+.verificar.tokens button {
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background: #1F3A60;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.1s ease;
+}
+
+.verificar.tokens button:hover {
+  background: #0056b3;
+}
+
+.verificar.tokens button:active {
+  transform: scale(0.96);
+}
+
+
+/* Título da seção */
+.tokens-pendentes h2 {
+  font-size: 26px;
+  color: #1F3A60;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Lista de tokens */
+.tokens-pendentes ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Cada item da lista */
+.tokens-pendentes li {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 15px;
+  display: flex;
+  gap: 6px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* Hover nos itens da lista */
+.tokens-pendentes li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Destaque das informações */
+.tokens-pendentes li strong {
+  color: #1F3A60;
+}
+
+/* Parágrafos de feedback quando não houver tokens */
+.tokens-pendentes p {
+  font-size: 18px;
+  color: #555555;
+  text-align: center;
+  margin-top: 20px;
+}
+
+
+
+/* ------------------- */
+/* LISTAS DE TOKENS PENDENTES */
+/* ------------------- */
+.tokens-pendentes {
+  margin: 30px;                   /* margem de 30px em todas as laterais */
+  padding: 20px;
+  background-color: #e0e0e0;      /* fundo cinza */
+  border-radius: 12px;
+  width: 95%;
+}
+
+/* Título da seção */
+.tokens-pendentes h2 {
+  font-size: 24px;
+  color: #1F3A60;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* Lista de tokens */
+.tokens-pendentes ul {
+  padding: 0;
+  margin: 0;
+}
+
+/* Cada item da lista como card contínuo */
+.tokens-pendentes li {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 15px 20px;
+  margin-bottom: 15px;
+  color: #333333;
+  box-shadow: 0px 2px 6px rgba(0,0,0,0.08);
+}
+
+/* Destaque das informações */
+.tokens-pendentes li strong {
+  color: #1F3A60;
+}
+
+/* Parágrafos quando não houver tokens */
+.tokens-pendentes p {
+  font-size: 18px;
+  color: #555555;
+  margin-top: 20px;
+}
+
+/* Container principal dos tokens verificados hoje */
+.verificados-hoje {
+  margin: 30px;           /* distância da esquerda */
+  width: 500px;                /* largura fixa */
+  padding: 20px;
+  background-color: #e0e0e0;   /* fundo cinza */
+  border-radius: 12px;
+}
+
+/* Título da seção */
+.verificados-hoje h2 {
+  font-size: 24px;
+  color: #1F3A60;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* Lista de tokens */
+.verificados-hoje ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Cada item da lista como card */
+.verificados-hoje li {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 15px 20px;
+  margin-bottom: 15px;
+  color: #333333;
+  line-height: 1.5;
+  box-shadow: 0px 2px 6px rgba(0,0,0,0.08);
+}
+
+/* Destaque das informações */
+.verificados-hoje li strong {
+  color: #1F3A60;
+}
+
+/* Parágrafos quando não houver tokens */
+.verificados-hoje p {
+  font-size: 18px;
+  color: #555555;
+  margin-top: 20px;
+}
+
+
+/* ------------------- */
+/* MODAIS */
+/* ------------------- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 25px 30px;
+  border-radius: 10px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0px 4px 10px rgba(0,0,0,0.15);
+}
+
+.modal-content p {
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #333;
+}
+
+.big {
+  font-size: 25px;
+}
+
+.modal-content button {
+  padding: 10px 18px;
+  margin: 0 5px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-content button:first-of-type {
+  background: #007bff;
+  color: #fff;
+}
+
+.modal-content button:first-of-type:hover {
+  background: #0056b3;
+}
+
+.modal-content button:last-of-type {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.modal-content button:last-of-type:hover {
+  background: #c9c9c9;
+}
