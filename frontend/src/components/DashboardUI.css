@@ -245,3 +245,11 @@ body.dark-mode .dashboard-page { --ui-surface: #182334; --ui-text: #e8edf5; --ui
 }
 
 
+.verification-result-banner { display: flex; align-items: flex-start; gap: 12px; padding: 16px; margin-top: 20px; border-radius: 8px; background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; }
+.verification-result-banner svg { flex-shrink: 0; }
+.dashboard-page .verification-result-banner p { margin: 0; font-weight: 600; line-height: 1.5; }
+.verification-result--success .verification-result-banner { background: #ecfdf3; color: #166534; border-color: #bbf7d0; }
+.verification-result-details { display: grid; gap: 16px; margin: 24px 0; }
+.verification-result-details dt { font-size: 14px; color: var(--ui-secondary); margin-bottom: 4px; }
+.verification-result-details dd { margin: 0; font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
+.verification-result-details .verification-result-token { font-size: 28px; letter-spacing: .12em; color: var(--color-primary); }

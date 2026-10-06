@@ -11,7 +11,7 @@ const email = require('../dist/src/utils/email');
 const audit = require('../dist/src/utils/audit');
 const tokenUtils = require('../dist/src/utils/tokenUtils');
 const whatsapp = require('../dist/src/services/whatsapp.service');
-const { generateToken } = require('../dist/src/controllers/token.controller');
+const { generateToken, verifyToken } = require('../dist/src/controllers/token.controller');
 
 const company = { _id: '507f1f77bcf86cd799439011', razaoSocial: 'Empresa teste', emailReferencia: 'teste@example.com', telefone: '+5531999999999' };
 const request = deliveryChannel => ({ body: { companyId: company._id, nfNumber: '123456789', ...(deliveryChannel === undefined ? {} : { deliveryChannel }) }, userId: '507f1f77bcf86cd799439012', userRole: 'vendedor', headers: {}, socket: {}, ip: '127.0.0.1' });
@@ -208,4 +208,32 @@ test('Classificação amigável de erros sem retornar corpo bruto', () => {
   assert.equal(whatsapp.classifyWhatsappFailure(429, {}, true).reason, 'rate_limit');
   assert.equal(whatsapp.classifyWhatsappFailure(503, {}, true).reason, 'unavailable');
   assert.equal(whatsapp.normalizeWhatsappPhone('+5531999999999'), '5531999999999');
+});
+test('Verificação distingue inválido, vencido e utilizado sem salvar novamente', async t => {
+  const lookup = t.mock.method(Token, 'findOne', async () => null);
+  for (const [existing, expected] of [[null, 'invalid_token'], [{ used: false, expiresAt: new Date(0) }, 'expired_token'], [{ used: true, expiresAt: new Date(Date.now() + 86400000) }, 'used_token']]) {
+    lookup.mock.mockImplementation(async query => 'used' in query ? null : existing);
+    const res = response();
+    await verifyToken({ ...request(), body: { token: 'A1B2C3' } }, res);
+    assert.equal(res.code, 400);
+    assert.equal(res.body.code, expected);
+  }
+});
+
+test('Verificação válida retorna token, cliente, NF e horário e salva uma vez', async t => {
+  let saves = 0;
+  const document = { companyId: company._id, nfNumber: '000000011', expiresAt: new Date(Date.now() + 86400000), save: async () => { saves++; } };
+  t.mock.method(Token, 'findOne', async () => document);
+  t.mock.method(Company, 'findById', async () => company);
+  const log = t.mock.method(audit, 'logAction', async () => {});
+  const res = response();
+  await verifyToken({ ...request(), body: { token: 'A1B2C3' } }, res);
+  assert.equal(res.code, 200);
+  assert.equal(res.body.tokenData.token, 'A1B2C3');
+  assert.equal(res.body.tokenData.companyName, company.razaoSocial);
+  assert.equal(res.body.tokenData.nfNumber, '000000011');
+  assert.ok(res.body.tokenData.usedAt instanceof Date);
+  assert.equal(document.used, true);
+  assert.equal(saves, 1);
+  assert.equal(log.mock.callCount(), 1);
 });

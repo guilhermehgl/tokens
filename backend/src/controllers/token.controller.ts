@@ -160,7 +160,13 @@ export const verifyToken = async (req: AuthRequest, res: Response) => {
       expiresAt: { $gt: new Date() }
     });
 
-    if (!tokenDoc) return res.status(400).json({ message: "Token inválido ou expirado ❌" });
+    if (!tokenDoc) {
+      const existing = await Token.findOne({ tokenHash });
+      if (!existing) return res.status(400).json({ code: "invalid_token", message: "Token não encontrado. Confira o código informado. A retirada não foi liberada." });
+      if (existing.used) return res.status(400).json({ code: "used_token", message: "Este token já foi utilizado. Não é possível liberar outra retirada com o mesmo código." });
+      if (existing.expiresAt <= new Date()) return res.status(400).json({ code: "expired_token", message: "Este token está vencido. Solicite um novo token ao vendedor. A retirada não foi liberada." });
+      return res.status(400).json({ code: "invalid_token", message: "Não foi possível validar este token. A retirada não foi liberada." });
+    }
 
     // Marca token como usado
     tokenDoc.used = true;
@@ -191,7 +197,9 @@ export const verifyToken = async (req: AuthRequest, res: Response) => {
       tokenData: {
         token,
         companyName,
-        nfNumber: tokenDoc.nfNumber || "Não informada"
+        nfNumber: tokenDoc.nfNumber || "Não informada",
+        usedAt: tokenDoc.usedAt,
+        expiresAt: tokenDoc.expiresAt
       }
     });
   } catch (error) {
@@ -229,30 +237,19 @@ export const getUnverifiedTokens = async (req: Request, res: Response) => {
     const tokens = await Token.find({
       used: false,
       expiresAt: { $gt: new Date() }
-    }).lean();
+    }).select("companyName nfNumber createdAt expiresAt").sort({ createdAt: -1, _id: -1 }).lean();
 
     if (!tokens || tokens.length === 0) {
       return res.json({ tokens: [] });
     }
 
-    // Agrupar por empresa + NF
-    const grouped = tokens.reduce((acc: any, t: any) => {
-      const companyName = t.companyName || "Empresa não encontrada";
-      const nfNumber = t.nfNumber || "Não informada";
-      const key = `${companyName}-${nfNumber}`;
-
-      if (!acc[key]) {
-        acc[key] = {
-          companyName,
-          nfNumber,
-          count: 0,
-        };
-      }
-      acc[key].count++;
-      return acc;
-    }, {});
-
-    res.json({ tokens: Object.values(grouped) });
+    res.json({ tokens: tokens.map(t => ({
+      _id: t._id,
+      companyName: t.companyName || "Empresa não encontrada",
+      nfNumber: t.nfNumber || "Não informada",
+      createdAt: t.createdAt,
+      expiresAt: t.expiresAt,
+    })) });
   } catch (error) {
     console.error("Erro ao buscar tokens não verificados:", error);
     res.status(500).json({ message: "Erro interno" });
