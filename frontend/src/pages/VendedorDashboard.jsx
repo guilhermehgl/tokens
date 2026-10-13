@@ -229,7 +229,7 @@ export default function VendedorDashboard() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setModalMessage(response.data.message || (deliveryChannel === "whatsapp" ? "Token gerado e enviado por WhatsApp." : "Token gerado e enviado por e-mail."));
+      setModalMessage(response.data.message || (deliveryChannel === "whatsapp" ? "Token gerado. O envio foi aceito pela Vonage; a entrega ainda não foi confirmada." : "Token gerado e enviado por e-mail."));
       setTokenCompany(null);
       setNfNumbers(previous => ({ ...previous, [companyId]: "" }));
     } catch (err) {

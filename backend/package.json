@@ -2,14 +2,18 @@
   "name": "maza-tokens",
   "version": "1.0.0",
   "main": "index.js",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
-    "dev": "ts-node-dev --respawn --exit-child --watch .env --transpile-only src/app.ts",
+    "dev": "tsx watch --clear-screen=false --include .env src/app.ts",
     "build": "tsc",
     "test:delivery": "npm run build && node --test tests/token-delivery.test.cjs",
+    "test:email": "npm run build && node --test tests/email.test.cjs",
   "test:phone": "npm run build && node --test tests/company-phone.test.cjs",
     "start": "node dist/src/app.js",
     "admin": "node dist/scripts/createAdmin.js",
-    "admin:dev": "ts-node src/scripts/createAdmin.ts"
+    "admin:dev": "tsx src/scripts/createAdmin.ts"
   },
   "keywords": [],
   "author": "",
@@ -27,9 +31,9 @@
     "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.13.14",
-    "mjml": "^4.15.3",
+    "mjml": "^5.4.1",
     "mongoose": "^8.17.2",
-    "nodemailer": "^7.0.5",
+    "nodemailer": "^10.0.16",
     "rate-limiter-flexible": "^7.2.0"
   },
   "devDependencies": {
@@ -39,8 +43,7 @@
     "@types/ioredis": "^4.28.10",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^24.6.0",
-    "@types/nodemailer": "^7.0.1",
-    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.2"
   }
 }

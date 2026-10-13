@@ -92,7 +92,7 @@ export const generateToken = async (req: AuthRequest, res: Response) => {
       `;
   
       // Converte MJML → HTML
-      const { html } = mjml2html(mjmlTemplate);
+      const { html } = await mjml2html(mjmlTemplate);
   
       // Envia email
       await sendEmail(
@@ -131,7 +131,7 @@ await logAction(
 );
 
 
-    res.json({ success: true, message: deliveryChannel === "email" ? "Token gerado e enviado por e-mail." : "Token gerado e enviado por WhatsApp.", tokenId: tokenDoc._id, deliveryChannel, ...(deliveryMessageId ? { deliveryMessageId, deliveryStatus: "accepted" } : {}) });
+    res.json({ success: true, message: deliveryChannel === "email" ? "Token gerado e enviado por e-mail." : "Token gerado. A Vonage aceitou o envio para WhatsApp, mas a entrega ainda não foi confirmada.", tokenId: tokenDoc._id, deliveryChannel, ...(deliveryMessageId ? { deliveryMessageId, deliveryStatus: "accepted" } : {}) });
   } catch (error) {
     if (error instanceof WhatsappDeliveryError) {
       console.error("Falha no envio WhatsApp:", { reason: error.reason, providerStatus: error.providerStatus, tokenCreated });
@@ -150,15 +150,19 @@ export const verifyToken = async (req: AuthRequest, res: Response) => {
     const { token } = req.body;
 
     if (!req.userId) return res.status(401).json({ message: "Usuário não autenticado" });
-    if (!token) return res.status(400).json({ message: "Token é obrigatório" });
+    if (typeof token !== "string" || !/^[A-Z0-9]{6}$/.test(token)) {
+      return res.status(400).json({ code: "invalid_token", message: "Informe um token com exatamente 6 letras maiúsculas ou números. A retirada não foi liberada." });
+    }
 
     const tokenHash = hashToken(token);
 
-    const tokenDoc = await Token.findOne({
+    const usedAt = new Date();
+    // A condição e o consumo ocorrem numa única operação no MongoDB.
+    const tokenDoc = await Token.findOneAndUpdate({
       tokenHash,
       used: false,
-      expiresAt: { $gt: new Date() }
-    });
+      expiresAt: { $gt: usedAt }
+    }, { $set: { used: true, usedBy: new Types.ObjectId(req.userId), usedAt, verifiedToken: token } }, { new: true, runValidators: true });
 
     if (!tokenDoc) {
       const existing = await Token.findOne({ tokenHash });
@@ -167,13 +171,6 @@ export const verifyToken = async (req: AuthRequest, res: Response) => {
       if (existing.expiresAt <= new Date()) return res.status(400).json({ code: "expired_token", message: "Este token está vencido. Solicite um novo token ao vendedor. A retirada não foi liberada." });
       return res.status(400).json({ code: "invalid_token", message: "Não foi possível validar este token. A retirada não foi liberada." });
     }
-
-    // Marca token como usado
-    tokenDoc.used = true;
-    tokenDoc.usedBy = new Types.ObjectId(req.userId);
-    tokenDoc.usedAt = new Date();
-    tokenDoc.verifiedToken = token;
-    await tokenDoc.save();
 
     const company: CompanyDocument | null = await Company.findById(tokenDoc.companyId);
     const companyName = company ? company.razaoSocial : "Empresa não encontrada";

@@ -17,7 +17,7 @@ test('Escolha de canal: destinos, padrão e WhatsApp desabilitado para empresa a
   const { createServer } = await import('vite');
   const React = await import('react');
   const { renderToStaticMarkup } = await import('react-dom/server');
-  const server = await createServer({ server: { middlewareMode: true }, appType: 'custom' });
+  const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', optimizeDeps: { noDiscovery: true, include: [] } });
   try {
     const { default: DeliveryOptions } = await server.ssrLoadModule('/src/components/TokenDeliveryOptions.jsx');
     const company = { _id: 'test-company', emailReferencia: 'teste@example.com', telefone: '+5531999999999' };

@@ -1,11 +1,11 @@
 import nodemailer from "nodemailer";
-import path from "path";
+import type Mail from "nodemailer/lib/mailer";
 
 export const sendEmail = async (
   to: string,
   subject: string,
   html: string,
-  attachments: any[] = []
+  attachments: Mail.Attachment[] = []
 ) => {
   try {
     const transporter = nodemailer.createTransport({

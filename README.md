@@ -1,5 +1,16 @@
 # Sistema de Tokens
 
+## Requisito de execução
+
+Use Node.js 24.15 ou superior na linha 24 (ou 22.22.2+ na linha 22).
+As dependências atuais de e-mail exigem esse mínimo. Confira com `node --version`
+antes de instalar no servidor. Após atualizar o projeto, reinstale as dependências
+com `npm ci` na raiz, em `backend` e em `frontend`.
+
+O backend usa `tsx watch` em desenvolvimento, incluindo reinício ao alterar `.env`.
+O build `tsc` continua responsável pela checagem de tipos. Não use o servidor de
+desenvolvimento em produção.
+
 ## Iniciar frontend e backend juntos
 
 Na raiz do projeto, execute:

@@ -210,6 +210,7 @@ test('Classificação amigável de erros sem retornar corpo bruto', () => {
   assert.equal(whatsapp.normalizeWhatsappPhone('+5531999999999'), '5531999999999');
 });
 test('Verificação distingue inválido, vencido e utilizado sem salvar novamente', async t => {
+  t.mock.method(Token, 'findOneAndUpdate', async () => null);
   const lookup = t.mock.method(Token, 'findOne', async () => null);
   for (const [existing, expected] of [[null, 'invalid_token'], [{ used: false, expiresAt: new Date(0) }, 'expired_token'], [{ used: true, expiresAt: new Date(Date.now() + 86400000) }, 'used_token']]) {
     lookup.mock.mockImplementation(async query => 'used' in query ? null : existing);
@@ -223,7 +224,13 @@ test('Verificação distingue inválido, vencido e utilizado sem salvar novament
 test('Verificação válida retorna token, cliente, NF e horário e salva uma vez', async t => {
   let saves = 0;
   const document = { companyId: company._id, nfNumber: '000000011', expiresAt: new Date(Date.now() + 86400000), save: async () => { saves++; } };
-  t.mock.method(Token, 'findOne', async () => document);
+  const consume = t.mock.method(Token, 'findOneAndUpdate', async (query, update, options) => {
+    assert.equal(query.used, false);
+    assert.ok(query.expiresAt.$gt instanceof Date);
+    assert.equal(options.new, true);
+    Object.assign(document, update.$set);
+    return document;
+  });
   t.mock.method(Company, 'findById', async () => company);
   const log = t.mock.method(audit, 'logAction', async () => {});
   const res = response();
@@ -234,6 +241,34 @@ test('Verificação válida retorna token, cliente, NF e horário e salva uma ve
   assert.equal(res.body.tokenData.nfNumber, '000000011');
   assert.ok(res.body.tokenData.usedAt instanceof Date);
   assert.equal(document.used, true);
-  assert.equal(saves, 1);
+  assert.equal(saves, 0);
+  assert.equal(consume.mock.callCount(), 1);
+  assert.equal(log.mock.callCount(), 1);
+});
+
+test('Entradas inválidas não consultam nem consomem tokens', async t => {
+  const consume = t.mock.method(Token, 'findOneAndUpdate', async () => { throw new Error('Não deve consultar'); });
+  for (const token of [undefined, null, {}, [], 123456, 'abc123', 'ABC12', 'ABC1234']) {
+    const res = response();
+    await verifyToken({ ...request(), body: { token } }, res);
+    assert.equal(res.code, 400);
+  }
+  assert.equal(consume.mock.callCount(), 0);
+});
+
+test('Verificações concorrentes: apenas uma liberação e uma auditoria (MongoDB simulado)', async t => {
+  const document = { companyId: company._id, nfNumber: '000000011', used: false, expiresAt: new Date(Date.now() + 86400000) };
+  t.mock.method(Token, 'findOneAndUpdate', async (_query, update) => {
+    if (document.used) return null;
+    Object.assign(document, update.$set);
+    return document;
+  });
+  t.mock.method(Token, 'findOne', async () => document);
+  t.mock.method(Company, 'findById', async () => company);
+  const log = t.mock.method(audit, 'logAction', async () => {});
+  const first = response(); const second = response();
+  await Promise.all([verifyToken({ ...request(), body: { token: 'A1B2C3' } }, first), verifyToken({ ...request(), body: { token: 'A1B2C3' } }, second)]);
+  assert.deepEqual([first.code, second.code].sort(), [200, 400]);
+  assert.equal(second.body.code, 'used_token');
   assert.equal(log.mock.callCount(), 1);
 });

@@ -2,7 +2,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import readline from "readline";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import dotenv from "dotenv";
 import User from "../models/User"; // ajuste o caminho se necessário
 
@@ -42,7 +42,7 @@ const createAdmin = async () => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Gera UUID e hash
-    const recoveryUUID = uuidv4();
+    const recoveryUUID = randomUUID();
     const hashedUUID = await bcrypt.hash(recoveryUUID, 10);
 
     const newAdmin = await User.create({
