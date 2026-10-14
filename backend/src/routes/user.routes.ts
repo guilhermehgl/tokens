@@ -2,7 +2,9 @@ import { Router } from "express";
 import { authMiddleware } from "../middleware/auth";
 import { getAllUsers, updateUser, deleteUser } from "../controllers/user.controller";
 import User from "../models/User";
-import bcrypt from "bcryptjs"; 
+import bcrypt from "bcrypt";
+import { blockDemoUserMutation } from "../middleware/demo";
+import { validId, validPassword, persistenceError } from "../utils/validation";
 import { isDemoIdentity } from "../demo/accounts";
 
 const router = Router();
@@ -11,18 +13,18 @@ const router = Router();
 router.get("/", authMiddleware(["admin"]), getAllUsers);
 
 // Atualizar usuário (nome, role, senha)
-router.put("/:id", authMiddleware(["admin"]), updateUser);
+router.put("/:id", authMiddleware(["admin"]), blockDemoUserMutation, updateUser);
 
 // Deletar usuário
-router.delete("/:id", authMiddleware(["admin"]), deleteUser);
+router.delete("/:id", authMiddleware(["admin"]), blockDemoUserMutation, deleteUser);
 
 
 // RESET PASSWORD - apenas admin, não pode resetar senha do próprio admin
-router.put("/:id/reset-password", authMiddleware(["admin"]), async (req, res) => {
+router.put("/:id/reset-password", authMiddleware(["admin"]), blockDemoUserMutation, async (req, res) => {
   const { id } = req.params;
   const { newPassword } = req.body;
 
-  if (!newPassword) return res.status(400).json({ error: "Nova senha não informada" });
+  if (!validId(id) || !validPassword(newPassword)) return res.status(400).json({ message: "Informe ID válido e senha com 8 caracteres, letra, número e símbolo (até 72 bytes)." });
 
   try {
     const user = await User.findById(id);
@@ -39,8 +41,7 @@ router.put("/:id/reset-password", authMiddleware(["admin"]), async (req, res) =>
 
     res.json({ message: "Senha alterada com sucesso" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro interno do servidor" });
+    persistenceError(res, err);
   }
 });
 

@@ -1,6 +1,8 @@
 // src/middleware/auth.ts
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { isDemoIdentity } from "../demo/accounts";
+import { validId } from "../utils/validation";
 import User from "../models/User";
 
 // Interface do token decodificado
@@ -16,6 +18,7 @@ declare module "express-serve-static-core" {
   interface Request {
     userId?: string;
     userRole?: string;
+    userIsDemo?: boolean;
   }
 }
 
@@ -30,7 +33,8 @@ export const authMiddleware = (allowedRoles: string[] = []) => {
     const token = authHeader.split(" ")[1];
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as DecodedToken;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string, { algorithms: ["HS256"] }) as DecodedToken;
+      if (!validId(decoded.id)) return res.status(401).json({ message: "Sessão inválida" });
       const user = await User.findById(decoded.id);
       if (!user || user.role !== decoded.role) return res.status(401).json({ message: "Sessão inválida" });
 
@@ -40,7 +44,8 @@ export const authMiddleware = (allowedRoles: string[] = []) => {
 
       // Salva informações do usuário na requisição
       req.userId = decoded.id;
-      req.userRole = decoded.role;
+      req.userRole = user.role;
+      req.userIsDemo = isDemoIdentity(user);
 
       next();
     } catch {

@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import User, { IUser } from "../models/User";
+import User from "../models/User";
 import { Types } from "mongoose";
+import { validEmail, validName, validPassword, persistenceError } from "../utils/validation";
 import { isDemoIdentity } from "../demo/accounts";
 
 // Função para gerar JWT
@@ -20,7 +21,10 @@ interface AuthRequest extends Request {
 // ----------------------------
 export const register = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { nome, email, password, role } = req.body;
+    const { nome, password, role } = req.body;
+    const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : req.body.email;
+    if (req.userIsDemo) { res.status(403).json({ message: "Operação indisponível para conta demonstrativa." }); return; }
+    if (!validName(nome) || !validEmail(email) || !validPassword(password)) { res.status(400).json({ message: "Informe nome, e-mail válido e senha com 8 caracteres, letra, número e símbolo (até 72 bytes)." }); return; }
     if (typeof email !== "string" || isDemoIdentity({ email }) || !["vendedor", "verificador"].includes(role)) {
       res.status(400).json({ message: "Informe um perfil permitido e um e-mail não reservado." }); return;
     }
@@ -61,12 +65,11 @@ export const register = async (req: AuthRequest, res: Response): Promise<void> =
         id: newUserIdStr,
         nome: newUser.nome,
         email: newUser.email,
-        role: newUser.role
+        role: newUser.role, isDemo: isDemoIdentity(newUser)
       }
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erro interno" });
+    persistenceError(res, error);
   }
 };
 
@@ -109,12 +112,11 @@ export const login = async (req: AuthRequest, res: Response): Promise<void> => {
         id: userIdStr,
         nome: user.nome,
         email: user.email,
-        role: user.role
+        role: user.role, isDemo: isDemoIdentity(user)
       }
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erro interno" });
+    persistenceError(res, error);
   }
 };
 
@@ -128,11 +130,12 @@ export const refreshToken = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ message: "Usuário inválido" });
     }
 
-    const token = generateJWT(userId, role);
-
-    res.json({ success: true, token });
+    const user = await User.findById(userId);
+    if (!user || user.role !== role) return res.status(401).json({ message: "Sessão inválida" });
+    const token = generateJWT(userId, user.role);
+    res.json({ success: true, token, user: { id: userId, nome: user.nome, email: user.email, role: user.role, isDemo: isDemoIdentity(user) } });
   } catch (err) {
-    console.error(err);
+    console.error("SESSION_REFRESH_FAILED");
     res.status(500).json({ message: "Erro ao renovar token" });
   }
 };

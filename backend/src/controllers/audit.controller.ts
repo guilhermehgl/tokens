@@ -1,6 +1,7 @@
 // src/controllers/audit.controller.ts
 import { Request, Response } from "express";
 import AuditLog from "../models/AuditLog";
+import { sanitize } from "../utils/sanitize";
 
 export const getAuditLogs = async (req: Request, res: Response) => {
   try {
@@ -10,13 +11,9 @@ export const getAuditLogs = async (req: Request, res: Response) => {
       .populate("performedBy", "nome email").lean();
 
     // Não retornar códigos/hash eventualmente existentes em auditorias antigas.
-    res.json({ success: true, logs: logs.map(log => {
-      const info = { ...log.info };
-      delete info.token; delete info.verifiedToken; delete info.tokenHash;
-      return { ...log, info };
-    }) });
+    res.json(sanitize(logs));
   } catch (error) {
-    console.error("Erro ao buscar logs:", error);
+    console.error("AUDIT_READ_FAILED");
     res.status(500).json({ message: "Erro interno" });
   }
 };
