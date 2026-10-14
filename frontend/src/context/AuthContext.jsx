@@ -7,7 +7,7 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/client";
-import { validSession, sessionExpiry } from "../utils/session";
+import { validSession, sessionExpiry, sameSessionUser } from "../utils/session";
 export const AuthContext = createContext({});
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null),
@@ -97,6 +97,10 @@ export const AuthProvider = ({ children }) => {
       if ((event.key === "token" && !event.newValue) || event.key === null)
         logout();
       else if (event.key === "token") {
+        if (validSession(event.newValue) && sameSessionUser(token, event.newValue)) {
+          setToken(event.newValue);
+          return;
+        }
         // Não apaga a sessão que acaba de ser aberta na outra aba.
         setUser(null);
         setToken(null);
@@ -113,7 +117,7 @@ export const AuthProvider = ({ children }) => {
       window.removeEventListener("session-invalid", invalid);
       window.removeEventListener("storage", sync);
     };
-  }, [logout, navigate]);
+  }, [logout, navigate, token]);
   return (
     <AuthContext.Provider
       value={{ user, token, login, logout, loading, sessionMessage }}
