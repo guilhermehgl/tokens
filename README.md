@@ -8,7 +8,9 @@ Criado para uma necessidade empresarial e adaptado para portfólio público com 
 
 [Portal de Tokens](https://tokens-theta-dun.vercel.app/)
 
-Verificação em 14/10/2026: carregamento, login dos três perfis e consulta administrativa disponíveis. **A geração publicada está bloqueada por incompatibilidade entre frontend e API**: a interface solicita exibição na tela, mas o backend hospedado exige um canal externo. Não selecione canais de mensagem para contornar o erro. A correção da branch precisa de revisão e deploy autorizado; testes locais não comprovam que a versão publicada recebeu as mudanças. O endereço anterior `tokens-mu.vercel.app` retorna `DEPLOYMENT_NOT_FOUND`.
+Verificação em 14/10/2026: o frontend carrega, mas **a demonstração completa permanece indisponível**. O bundle aponta para a API Render, que respondeu HTTP 502 nesta revisão. O painel confirma frontend em `eec58ac` e último backend publicado com sucesso em `96548fe`. O deploy do backend mais novo compilou, mas falhou ao iniciar por `JWT_SECRET` abaixo do mínimo de 32 caracteres. A versão antiga exige canal externo; não tente contornar o erro escolhendo e-mail ou WhatsApp. [Estado e evidências](docs/PUBLICACAO.md).
+
+### Acessos públicos de teste
 
 Credenciais da hospedagem, fornecidas pelo autor para a demonstração:
 
@@ -18,7 +20,21 @@ Credenciais da hospedagem, fornecidas pelo autor para a demonstração:
 | Vendedor | vendedor@vendedor.com | `123$qwer` |
 | Verificador | verificador@verificador.com | `123$qwer` |
 
-Essas identidades também são protegidas no código corrigido. A versão hospedada ainda exibe ações administrativas para elas; não representa a validação das novas proteções. Nunca use essas senhas em contas reais.
+As credenciais são públicas intencionalmente e qualquer visitante pode utilizá-las. Use somente dados fictícios, nunca informações empresariais reais. Essas identidades são protegidas no código corrigido; as proteções ainda precisam ser publicadas. Os logins foram confirmados na etapa anterior, mas não foram revalidados nesta revisão com a API indisponível. Nunca use essas senhas em contas reais.
+
+### Como experimentar
+
+O roteiro abaixo descreve a versão corrigida, validada localmente. **No endereço público, aguarde a atualização autorizada da API e a confirmação do fluxo completo.** Não é necessário configurar um ambiente local para usar a demonstração depois da publicação.
+
+1. Abra o link acima e entre como **Vendedor**.
+2. Selecione uma empresa fictícia ou cadastre outra com dados de teste.
+3. Informe uma NF de nove dígitos, por exemplo `000000101`, e clique em **Gerar token**.
+4. Copie o código exibido no modal. A versão corrigida não envia mensagens externas.
+5. Saia e entre como **Verificador**; informe o código e confirme a verificação.
+6. Repita a tentativa com o mesmo código: a segunda retirada deve ser recusada.
+7. Consulte pendências e retiradas; depois entre como **Administrador** para consultar usuários, empresas e auditoria.
+
+Os perfis separam emissão, liberação da retirada e administração. As contas são compartilhadas; outros visitantes podem adicionar dados fictícios enquanto você navega.
 
 ## Funcionalidades por perfil
 
@@ -122,7 +138,7 @@ $env:INTEGRITY_DB_NAME="portal_tokens_demo"
 npm --prefix backend run check:integrity
 ```
 
-O comando imprime apenas contagens e não modifica registros ou índices. [Procedimento de migração e limitações](docs/INTEGRIDADE.md).
+O comando imprime contagens e o estado dos índices esperados, sem valores de registros. Não cria coleções, índices ou dados. Verifica hashes legados, documentos, e-mails equivalentes após normalização e índices únicos/TTL. Saída com código 1 indica diagnóstico recusado, indisponível ou pendências; índice ausente não autoriza criá-lo remotamente. [Migração](docs/INTEGRIDADE.md) · [Plano de publicação e rollback](docs/DEPLOY.md).
 
 ## Testes e builds
 
@@ -146,7 +162,7 @@ O resultado real deve ser consultado na aba Actions do commit/PR; a existência 
 
 ## Integrações e limitações
 
-Nodemailer/SMTP/MJML e Vonage Messages API permanecem no código como referência técnica. A geração da versão corrigida **não chama os provedores**, mesmo que o cliente peça envio. Credenciais de integração não habilitam mensagens. Reativação exigiria uma mudança explícita no fluxo. [Integração WhatsApp](backend/WHATSAPP.md).
+Nodemailer/SMTP/MJML e Vonage Messages API possuem implementações preservadas da solução original, incluindo templates, validações e tratamento de erros. A geração da versão corrigida **não chama os provedores**, mesmo que o cliente peça envio. Credenciais de integração não habilitam mensagens. Reativação exigiria uma mudança explícita no fluxo. Testes usam mocks ou transporte MIME local; não houve validação de envio real nesta auditoria. **O backend hospedado antigo ainda possui envio no fluxo; a desativação pública só pode ser afirmada após sua atualização e validação.** [Integração WhatsApp](backend/WHATSAPP.md).
 
 A demonstração compartilha cadastros e não oferece isolamento por visitante. Limitadores são por processo; múltiplas instâncias precisam de armazenamento compartilhado antes de escalar. Não há limpeza automática, reset destrutivo, garantia transacional de auditoria, revogação imediata de JWT no logout ou unicidade de código após exclusão TTL. JWT em localStorage mantém risco de exposição por XSS; migração HttpOnly exige revisão do contrato de autenticação.
 

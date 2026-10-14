@@ -11,7 +11,7 @@ $env:INTEGRITY_DB_NAME="portal_tokens_demo"
 npm run check:integrity
 ```
 
-O diagnóstico usa somente leituras, desabilita criação automática de índices e imprime contagens, sem hashes ou documentos. Código de saída 1 indica duplicidades, formatos não canônicos ou falha de acesso. Se houver documentos formatados, normalize-os somente após revisão humana: documentos não canônicos bloqueiam a inicialização, evitando ignorar colisões entre formas diferentes. O diagnóstico não modifica o banco. Nenhuma migração foi executada em banco remoto.
+O diagnóstico usa somente leituras, desabilita criação automática de índices e coleções e imprime contagens e estado dos índices esperados, sem hashes, e-mails ou documentos. Inclui duplicidades de e-mails após normalização, hashes inválidos, documentos não canônicos e índices únicos/TTL ausentes ou incompatíveis. Código de saída 1 indica pendências, recusa ou falha de acesso. Se houver documentos formatados, normalize-os somente após revisão humana: documentos não canônicos bloqueiam a inicialização, evitando ignorar colisões entre formas diferentes. O diagnóstico não modifica o banco, não certifica todos os campos legados e não autoriza migração. Nenhuma migração foi executada em banco remoto. [Plano de publicação e rollback](DEPLOY.md).
 
 Em base existente, faça backup e revise duplicidades e formatos antes de qualquer migração. Não exclua registros para contornar o índice. Caso já exista índice não único com o mesmo nome/especificação, a criação pode falhar; planeje sua substituição explicitamente com o responsável pelo banco. A aplicação falha sem aceitar tráfego enquanto os índices necessários não estiverem disponíveis.
 

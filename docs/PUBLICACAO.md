@@ -1,15 +1,32 @@
 # Estado da publicação — 14/10/2026
 
-- Endereço informado inicialmente: https://tokens-mu.vercel.app — `404 DEPLOYMENT_NOT_FOUND`.
-- Endereço correto informado pelo autor: https://tokens-theta-dun.vercel.app — aplicação carrega e login dos três perfis e consultas de usuários, empresas, auditoria e pendências confirmados.
-- Contas atuais da hospedagem são diferentes do seed local. As três identidades fornecidas pelo autor foram incluídas nas proteções do código corrigido, sem alterar usuários ou credenciais no banco hospedado.
-- A interface publicada mostra envio externo desabilitado. Entretanto, ao gerar na tela, a API responde: “Escolha um canal de envio válido: e-mail ou WhatsApp.” Isso comprova incompatibilidade entre as versões do frontend/backend. A geração pública não foi concluída, e nenhum canal externo foi selecionado.
-- O admin publicado oferece ações de criação/exclusão e alteração de senha nas contas públicas. As novas proteções foram implementadas e testadas localmente, sem executar mutações administrativas no ambiente remoto.
-- Nenhum deploy, acesso Lightsail, alteração de configuração externa ou migração remota foi realizado. Não há evidência de que o servidor hospedado execute o commit corrigido.
-- Não anunciar o fluxo público como integralmente funcional antes de alinhar os deploys e repetir geração, consumo, segundo uso e auditoria. Não usar SMTP/Vonage para contornar o erro.
+Esta página separa execução local, evidências históricas e inspeção atual somente leitura. Nenhum merge, deploy manual, mudança de variável externa, migração ou alteração do banco remoto foi realizado nesta etapa.
 
-A versão corrigida usa somente geração na tela. O seed exige banco isolado terminado em `_demo`, vazio ou marcado, e não apaga dados. Não publica mudanças ou restaura infraestrutura. Confira [integridade e operação](INTEGRIDADE.md).
+| Item | Evidência atual | Conclusão |
+| --- | --- | --- |
+| Frontend | `https://tokens-theta-dun.vercel.app/` responde 200; Vercel indica `master`, commit `eec58ac` | CONFIRMADA a disponibilidade da interface |
+| API efetiva | Bundle público `index-qwnw2PeN.js` contém `https://tokens-xfrp.onrender.com/api` | CONFIRMADO o destino compilado de `VITE_API_URL` |
+| Proxy | URL absoluta no bundle; `frontend/vercel.json` faz apenas fallback SPA | API chamada diretamente no Render |
+| Backend | Render `tokens`, serviço `srv-db76ku49v7es73al9l6g`, branch `master` | Último sucesso `96548feed2adc1a30af2eca625cab16e3dc851e3` |
+| Atualização recusada | Deploy `dep-db7o6gui0phs739bultg`, fonte `eec58ac`, build concluído, processo encerrado com status 1 | Log: `JWT_SECRET deve ter pelo menos 32 caracteres.` |
+| Disponibilidade API | GET `/api/health` respondeu 502, inclusive sem Origin e com Origin correto | NÃO FOI POSSÍVEL VERIFICAR os fluxos públicos nesta revisão; 502 não comprova falha de CORS |
+| CORS | Logs do deploy recusado incluem theta e a origem antiga | Configuração registrada; comportamento hospedado da versão nova ainda não validado |
+| Banco remoto | `MONGO_URI` existe no painel, mantida mascarada | Nome, isolamento, duplicidades, formatos e índices NÃO VERIFICADOS |
 
-A apresentação do repositório pode usar a descrição: “Sistema Full Stack de geração e validação de tokens de retirada, com autenticação JWT, controle de acesso, auditoria e MongoDB.” Topics pertinentes: `react`, `nodejs`, `typescript`, `express`, `mongodb`, `fullstack`, `jwt`, `authentication`, `rest-api`, `portfolio`. Homepage deve apontar para uma demonstração integralmente validada; a geração pública continua pendente.
+O endereço antigo `tokens-mu.vercel.app` respondeu 404 e não é recomendado como acesso.
 
-Descrição e dez topics atualizados no GitHub. A homepage antiga foi removida, pois estava indisponível; o novo endereço permanece documentado com a limitação de geração, sem ser anunciado como fluxo completo validado.
+## Causa e limites
+
+O código público do backend `96548fe` exige `deliveryChannel=email|whatsapp`; o frontend solicita `screen`. Essa combinação explica a mensagem “Escolha um canal de envio válido: e-mail ou WhatsApp.” observada na etapa anterior. O novo backend compilou, porém recusou o segredo JWT curto na inicialização. Não reduzir a validação para contornar o problema.
+
+A branch corrigida já gera exclusivamente na tela, sem invocar `deliverToken`; não há rota alternativa que habilite SMTP/Vonage. Isso está validado localmente. **Não significa que o backend antigo hospedado tenha envio externo desativado.** Não forçar canais externos remotamente.
+
+Login dos três perfis e consultas administrativas foram confirmados na etapa anterior. Nesta revisão não foram repetidos com a API em 502. As credenciais públicas foram preservadas; nenhum seed remoto, alteração de senha, exclusão ou mutação administrativa foi executado. A validação pública completa aguarda deploy especificamente autorizado.
+
+## GitHub e automação
+
+O [PR existente](https://github.com/guilhermehgl/tokens/pull/1) permanece aberto. O CI de `42083d7` passou em Node 22 e 24 ([execução](https://github.com/guilhermehgl/tokens/actions/runs/38621039452)). Esse resultado não certifica commits locais posteriores.
+
+O workflow de qualidade não contém deploy, mas **a integração Vercel cria previews ao atualizar a branch/PR**; isso ocorreu na etapa anterior. Portanto, ausência de comando manual não significa ausência de deploy automático. Render também registra Auto-Deploy para `master`.
+
+Nesta etapa os novos commits são preparados localmente, sem push, até autorização para o preview automático. Homepage permanece sem anunciar o fluxo completo. [Plano de publicação, banco e rollback](DEPLOY.md).
