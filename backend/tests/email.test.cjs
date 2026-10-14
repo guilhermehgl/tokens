@@ -1,3 +1,7 @@
+process.env.SMTP_HOST = 'smtp.example.com';
+process.env.SMTP_PORT = '465';
+process.env.SMTP_USER = 'sender@example.com';
+process.env.SMTP_PASS = 'fictional-provider-password';
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const nodemailer = require('nodemailer');

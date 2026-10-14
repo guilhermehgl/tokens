@@ -9,7 +9,6 @@ const tokenSchema = new mongoose.Schema({
   used: { type: Boolean, default: false },
   nfNumber: { type: String, required: true },
   usedAt: { type: Date },
-   verifiedToken: { type: String },
   usedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
 }, { timestamps: true });
 

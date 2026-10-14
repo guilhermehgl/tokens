@@ -4,12 +4,14 @@ import bcrypt from "bcrypt";
 import readline from "readline";
 import { randomUUID } from "crypto";
 import dotenv from "dotenv";
+import { databaseUri, assertRuntime } from "../config/runtime";
 import User from "../models/User"; // ajuste o caminho se necessário
 
 dotenv.config();
 
 // Conexão com MongoDB
-mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/maza-tokens")
+assertRuntime();
+mongoose.connect(databaseUri())
   .then(() => console.log("MongoDB conectado"))
   .catch(err => {
     console.error("Erro ao conectar no MongoDB:", err);

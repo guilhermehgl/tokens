@@ -3,7 +3,7 @@ import { formatPhoneDestination } from '../utils/phone';
 export default function TokenDeliveryOptions({ company, channel, onChange, disabled }) {
   const telephone = formatPhoneDestination(company.telefone);
   return <fieldset className="token-delivery-options" disabled={disabled}>
-    <legend>Enviar token por</legend>
+    <legend>Envio externo (desabilitado)</legend>
     <label>
       <input type="radio" name={`delivery-${company._id}`} value="email" checked={channel === 'email'} onChange={() => onChange('email')} />
       <FiMail className="token-delivery-icon token-delivery-icon--email" size={24} aria-hidden="true" />

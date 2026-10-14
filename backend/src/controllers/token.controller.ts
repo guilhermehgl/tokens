@@ -1,66 +1,19 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
-import path from "path";
 import Token from "../models/Token";
 import { Company, CompanyDocument } from "../models/Company"; 
 import { generateTokenPlain, hashToken } from "../utils/tokenUtils";
-import { sendEmail } from "../utils/email";
+import { sendEmail, validateEmailConfiguration } from "../utils/email";
 import { logAction } from "../utils/audit";
 import mjml2html from "mjml";
-import { normalizeWhatsappPhone, validateWhatsappConfiguration, sendWhatsappText, whatsappTokenMessage, WhatsappDeliveryError } from "../services/whatsapp.service";
+import { normalizeWhatsappPhone, validateWhatsappConfiguration, sendWhatsappText, whatsappTokenMessage } from "../services/whatsapp.service";
 
-// Tipagem para request com userId
-interface AuthRequest extends Request {
-  userId?: string;
-  userRole?: string;
-}
-
-// ----------------------------
-// GERAR TOKEN
-// ----------------------------
-export const generateToken = async (req: AuthRequest, res: Response) => {
-  let tokenCreated = false;
-  try {
-    const { companyId, nfNumber } = req.body;
-    const deliveryChannel = req.body.deliveryChannel ?? "email";
-
-    if (!req.userId) return res.status(401).json({ message: "Usuário não autenticado" });
-    if (!companyId) return res.status(400).json({ message: "Informe companyId" });
-    if (!nfNumber) return res.status(400).json({ message: "Número da NF é obrigatório" });
-
-    if (deliveryChannel !== "email" && deliveryChannel !== "whatsapp") {
-      return res.status(400).json({ message: "Escolha um canal de envio válido: e-mail ou WhatsApp." });
-    }
-
-    const company: CompanyDocument | null = await Company.findById(companyId);
-    if (!company) return res.status(404).json({ message: "Empresa não encontrada" });
-
-    // Valida destinatário/configuração antes de criar um token que não pode ser enviado.
-    if (deliveryChannel === "whatsapp") {
-      normalizeWhatsappPhone(company.telefone);
-      validateWhatsappConfiguration();
-    }
-
-    // Saudação dinâmica
-    const horaAtual = new Date().getHours();
-    const saudacao = horaAtual < 12 ? "Bom dia" : "Boa tarde";
-
-    // Token simples + hash
-    const plainToken = generateTokenPlain(6);
-    const tokenHash = hashToken(plainToken);
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 dias
-
-    const tokenDoc = await Token.create({
-      companyId,
-      companyName: company.razaoSocial,
-      nfNumber,
-      tokenHash,
-      createdBy: new Types.ObjectId(req.userId),
-      expiresAt
-    });
-
-    tokenCreated = true;
-    let deliveryMessageId: string | undefined;
+// Integrações preservadas para referência/reutilização; a geração pública não chama esta função.
+export async function deliverToken(company: CompanyDocument, nfNumber: string, plainToken: string, deliveryChannel: "email" | "whatsapp") {
+  let deliveryMessageId: string | undefined;
+  const saudacao = new Date().getHours() < 12 ? "Bom dia" : "Boa tarde";
+  if (deliveryChannel === "whatsapp") { normalizeWhatsappPhone(company.telefone); validateWhatsappConfiguration(); }
+  else validateEmailConfiguration();
     if (deliveryChannel === "whatsapp") {
       const delivery = await sendWhatsappText(company.telefone, whatsappTokenMessage(company.razaoSocial, String(nfNumber), plainToken));
       deliveryMessageId = delivery.messageId;
@@ -71,7 +24,7 @@ export const generateToken = async (req: AuthRequest, res: Response) => {
           <mj-body>
             <mj-section>
               <mj-column width="550px" background-color="#c6ddedff" border-radius="1px">
-                <mj-image border-radius="5px" padding="30px" src="cid:logoEmpresa"/>
+                <mj-text font-size="22px" font-weight="bold">Portal de Tokens</mj-text>
                 <mj-text font-size="29px" color="#333">${saudacao}!</mj-text>
                 <mj-column width="450px" align="center">
                   <mj-text font-size="18px" align="center">
@@ -98,47 +51,57 @@ export const generateToken = async (req: AuthRequest, res: Response) => {
       await sendEmail(
         company.emailReferencia,
         "Token de Retirada",
-        html,
-        [
-          {
-            filename: "elmaz_logo.png",
-            path: path.join(__dirname, "../assets/elmaz_logo.png"),
-            cid: "logoEmpresa",
-          },
-        ]
+        html
       );
     }
 
-// Auditoria
-await logAction(
-  "GENERATE_TOKEN",
-  req.userId,
-  "Token", // targetType
-  {
-    companyId,
-    companyName: company.razaoSocial,
-    nfNumber,
-    expiresAt,
-    deliveryChannel,
-    deliveryDestination: deliveryChannel === "email" ? company.emailReferencia : company.telefone,
-    ...(deliveryMessageId ? { deliveryMessageId, deliveryStatus: "accepted" } : {}),
-    role: req.userRole,
-    ip:
-      req.ip ||
-      req.headers["x-forwarded-for"] ||
-      req.socket.remoteAddress,
-  }
-);
+  return deliveryMessageId;
+}
 
+// Tipagem para request com userId
+interface AuthRequest extends Request {
+  userId?: string;
+  userRole?: string;
+}
 
-    res.json({ success: true, message: deliveryChannel === "email" ? "Token gerado e enviado por e-mail." : "Token gerado. A Vonage aceitou o envio para WhatsApp, mas a entrega ainda não foi confirmada.", tokenId: tokenDoc._id, deliveryChannel, ...(deliveryMessageId ? { deliveryMessageId, deliveryStatus: "accepted" } : {}) });
+// ----------------------------
+// GERAR TOKEN
+// ----------------------------
+export const generateToken = async (req: AuthRequest, res: Response) => {
+  let tokenCreated = false;
+  try {
+    const { companyId, nfNumber } = req.body;
+
+    if (!req.userId) return res.status(401).json({ message: "Usuário não autenticado" });
+    if (!["vendedor", "admin"].includes(req.userRole || "")) return res.status(403).json({ message: "Acesso negado" });
+    if (!companyId) return res.status(400).json({ message: "Informe companyId" });
+    if (!nfNumber) return res.status(400).json({ message: "Número da NF é obrigatório" });
+    if (typeof nfNumber !== "string" || !/^\d{9}$/.test(nfNumber)) return res.status(400).json({ message: "A NF deve ter exatamente 9 dígitos." });
+    const company: CompanyDocument | null = await Company.findById(companyId);
+    if (!company) return res.status(404).json({ message: "Empresa não encontrada" });
+
+    // Token simples + hash
+    const plainToken = generateTokenPlain(6);
+    const tokenHash = hashToken(plainToken);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 dias
+
+    const tokenDoc = await Token.create({
+      companyId,
+      companyName: company.razaoSocial,
+      nfNumber,
+      tokenHash,
+      createdBy: new Types.ObjectId(req.userId),
+      expiresAt
+    });
+
+    tokenCreated = true;
+    await logAction("GENERATE_TOKEN", req.userId, "Token", { companyId, companyName: company.razaoSocial, nfNumber, expiresAt, deliveryChannel: "screen", role: req.userRole });
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ success: true, token: plainToken, tokenId: tokenDoc._id, expiresAt, deliveryChannel: "screen", message: "Token gerado. Copie o código exibido na tela." });
   } catch (error) {
-    if (error instanceof WhatsappDeliveryError) {
-      console.error("Falha no envio WhatsApp:", { reason: error.reason, providerStatus: error.providerStatus, tokenCreated });
-      return res.status(error.status).json({ message: error.message, code: error.reason, tokenCreated });
-    }
-    console.error("Falha ao gerar/enviar token.", { tokenCreated });
-    res.status(500).json({ message: "Não foi possível gerar ou enviar o token.", tokenCreated });
+
+    console.error("Falha ao gerar token.", { tokenCreated });
+    res.status(500).json({ message: "Não foi possível gerar o token.", tokenCreated });
   }
 };
 
@@ -162,7 +125,7 @@ export const verifyToken = async (req: AuthRequest, res: Response) => {
       tokenHash,
       used: false,
       expiresAt: { $gt: usedAt }
-    }, { $set: { used: true, usedBy: new Types.ObjectId(req.userId), usedAt, verifiedToken: token } }, { new: true, runValidators: true });
+    }, { $set: { used: true, usedBy: new Types.ObjectId(req.userId), usedAt } }, { new: true, runValidators: true });
 
     if (!tokenDoc) {
       const existing = await Token.findOne({ tokenHash });
@@ -217,7 +180,7 @@ export const getVerifiedTokensToday = async (req: Request, res: Response) => {
     const tokens = await Token.find({
       used: true,
       usedAt: { $gte: startOfDay }
-    }).sort({ usedAt: -1 });
+    }).select("companyName nfNumber usedAt expiresAt").sort({ usedAt: -1 });
 
     res.json({ tokens });
   } catch (error) {

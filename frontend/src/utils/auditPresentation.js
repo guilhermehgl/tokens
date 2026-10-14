@@ -5,7 +5,7 @@ export function auditSummary(log) {
   const info = log.info || {};
   const company = text(info.razaoSocial) || text(info.companyName);
   const nf = text(info.nfNumber);
-  const token = text(info.verifiedToken) || text(info.token);
+  const token = ""; // Códigos não são exibidos em auditoria.
   const withNf = value => [value, nf && `NF ${nf}`].filter(Boolean).join(" · ");
   switch (log.action) {
     case "CREATE_COMPANY":

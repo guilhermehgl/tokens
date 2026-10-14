@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // Se estiver usando variáveis de ambiente, o Vite automaticamente lê arquivos `.env`
-// com prefixo VITE_ (ex: VITE_API_URL=http://192.168.41.163:3003/api)
+// com prefixo VITE_ (ex: VITE_API_URL=http://localhost:3003/api)
 
 export default defineConfig({
   plugins: [react()],

@@ -8,8 +8,10 @@ import { HeaderActions, Button, PageHeader, Card, Field, SearchInput, DataTable,
 import { phoneCountries, phoneE164 } from "../utils/phone";
 import InternationalPhoneField from "../components/InternationalPhoneField";
 import TokenDeliveryOptions from "../components/TokenDeliveryOptions";
+import TokenResult from "../components/TokenResult";
 
 export default function VendedorDashboard() {
+  const [generatedToken, setGeneratedToken] = useState(null);
   const { user, token, loading: authLoading, logout } = useContext(AuthContext);
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -38,7 +40,6 @@ export default function VendedorDashboard() {
   const [tokenError, setTokenError] = useState("");
   const tokenTriggerRef = useRef(null);
   const [nfNumbers, setNfNumbers] = useState({});
-  const [deliveryChannels, setDeliveryChannels] = useState({});
   const [sendingTokens, setSendingTokens] = useState({});
   const tokenRequests = useRef(new Set());
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,7 +48,7 @@ export default function VendedorDashboard() {
   const [modalMessage, setModalMessage] = useState(null);
   const [modalConfirm, setModalConfirm] = useState(null);
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
 
   // -------------------------
   // FETCH COMPANIES
@@ -221,7 +222,7 @@ export default function VendedorDashboard() {
     setTokenError("");
     tokenRequests.current.add(companyId);
     setSendingTokens(previous => ({ ...previous, [companyId]: true }));
-    const deliveryChannel = deliveryChannels[companyId] || "email";
+    const deliveryChannel = "screen";
     try {
       const response = await axios.post(
         `${API_URL}/tokens/generate`,
@@ -229,11 +230,12 @@ export default function VendedorDashboard() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setModalMessage(response.data.message || (deliveryChannel === "whatsapp" ? "Token gerado. O envio foi aceito pela Vonage; a entrega ainda não foi confirmada." : "Token gerado e enviado por e-mail."));
+      if (response.data.token) setGeneratedToken(response.data.token);
+      else setModalMessage(response.data.message || "Token gerado.");
       setTokenCompany(null);
       setNfNumbers(previous => ({ ...previous, [companyId]: "" }));
     } catch (err) {
-      const message = err.response?.data?.message || "Não foi possível confirmar o envio. Verifique o status antes de gerar outro token.";
+      const message = err.response?.data?.message || "Não foi possível gerar o token. Tente novamente.";
       setTokenError(`${message}${err.response?.data?.tokenCreated ? " O token já foi gerado. Uma nova tentativa criará outro token." : ""}`);
     } finally {
       tokenRequests.current.delete(companyId);
@@ -275,7 +277,6 @@ export default function VendedorDashboard() {
                           tokenTriggerRef.current = event.currentTarget;
                           setTokenError("");
                           setNfNumbers(previous => ({ ...previous, [company._id]: "" }));
-                          setDeliveryChannels(previous => ({ ...previous, [company._id]: "email" }));
                           setTokenCompany(company);
                         }}><FiKey size={17} aria-hidden="true" />Gerar token</Button></div>
                       </td>
@@ -294,11 +295,12 @@ export default function VendedorDashboard() {
           <form className="generate-token-form" noValidate aria-busy={Boolean(sendingTokens[tokenCompany._id])} onSubmit={event => { event.preventDefault(); handleGenerateToken(tokenCompany._id); }}>
             <Field label="Número da NF"><input type="text" inputMode="numeric" required maxLength={9} disabled={Boolean(sendingTokens[tokenCompany._id])} placeholder="Digite os 9 dígitos da NF" value={nfNumbers[tokenCompany._id] || ""}
               onChange={event => { const value = event.target.value.replace(/\D/g, "").slice(0, 9); setNfNumbers(previous => ({ ...previous, [tokenCompany._id]: value })); setTokenError(""); }} /></Field>
-            <TokenDeliveryOptions company={tokenCompany} channel={deliveryChannels[tokenCompany._id] || "email"} disabled={Boolean(sendingTokens[tokenCompany._id])} onChange={channel => { setDeliveryChannels(previous => ({ ...previous, [tokenCompany._id]: channel })); setTokenError(""); }} />
+            <p>O código aparecerá na tela. O envio por e-mail e WhatsApp está desabilitado.</p>
+            <TokenDeliveryOptions company={tokenCompany} channel="screen" disabled onChange={() => {}} />
             {tokenError && <p className="company-form-error" role="alert">{tokenError}</p>}
             <div className="admin-modal-actions">
               <Button disabled={Boolean(sendingTokens[tokenCompany._id])} onClick={() => { if (!tokenRequests.current.has(tokenCompany._id)) setTokenCompany(null); }}>Cancelar</Button>
-              <Button variant="primary" type="submit" disabled={Boolean(sendingTokens[tokenCompany._id])}>{sendingTokens[tokenCompany._id] ? "Enviando..." : "Gerar e enviar"}</Button>
+              <Button variant="primary" type="submit" disabled={Boolean(sendingTokens[tokenCompany._id])}>{sendingTokens[tokenCompany._id] ? "Gerando..." : "Gerar token"}</Button>
             </div>
           </form>
         </Dialog>
@@ -331,7 +333,8 @@ export default function VendedorDashboard() {
           </form>
         </Dialog>
       )}
-      {!createOpen && !tokenCompany && modalMessage && (
+      {generatedToken && <TokenResult token={generatedToken} onClose={() => setGeneratedToken(null)} returnFocusRef={tokenTriggerRef} />}
+      {!generatedToken && !createOpen && !tokenCompany && modalMessage && (
         <Dialog title="Mensagem"><p>{modalMessage}</p><div className="admin-modal-actions"><Button variant="primary" onClick={() => setModalMessage(null)}>OK</Button></div></Dialog>
       )}
       {modalConfirm && (

@@ -64,7 +64,7 @@ export default function AdminDashboard() {
 });
 
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
   const token = localStorage.getItem("token");
   const currentUserEmail = user?.email;
 
@@ -428,11 +428,11 @@ useEffect(() => {
                         <td className="admin-secondary">{userItem.email}</td>
                         <td><Badge tone={userItem.role === "admin" ? "primary" : "neutral"}>{roleLabels[userItem.role] || userItem.role}</Badge></td>
                         <td><div className="admin-row-actions">
-                          {userItem.role !== "admin" && currentUserEmail !== userItem.email && (
+                          {!userItem.isDemo && userItem.role !== "admin" && currentUserEmail !== userItem.email && (
                             <Button onClick={(e) => { passwordTriggerRef.current = e.currentTarget; setPasswordError(""); setNewPassword(""); setShowNewPassword(false); setEditingUserId(userItem._id); }}>Alterar senha</Button>
                           )}
-                          {userItem.role !== "admin" && <Button variant="danger" className="user-delete-icon" aria-label={`Excluir usuário ${userItem.nome}`} title="Excluir usuário" onClick={() => confirmDeleteUser(userItem._id, userItem.role)}><FiTrash2 size={18} aria-hidden="true" /></Button>}
-                          {userItem.role === "admin" && <span className="admin-muted">Acesso administrativo</span>}
+                          {!userItem.isDemo && userItem.role !== "admin" && <Button variant="danger" className="user-delete-icon" aria-label={`Excluir usuário ${userItem.nome}`} title="Excluir usuário" onClick={() => confirmDeleteUser(userItem._id, userItem.role)}><FiTrash2 size={18} aria-hidden="true" /></Button>}
+                          {userItem.isDemo ? <span className="admin-muted">Conta demonstrativa protegida</span> : userItem.role === "admin" && <span className="admin-muted">Acesso administrativo</span>}
                         </div></td>
                       </tr>
                     ))}

@@ -125,3 +125,20 @@ button {
 
 button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 
+.portal-brand { font-size: clamp(1rem, 2vw, 1.35rem); font-weight: 750; color: #173b68; }
+.header-left { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.token-result-code { display: block; padding: 20px; margin: 12px 0; text-align: center; font: 700 clamp(1.7rem, 6vw, 2.4rem) monospace; letter-spacing: .15em; user-select: all; border-radius: 10px; background: #e8f1fa; color: #173b68; }
+@media (max-width: 600px) { .header-left { max-width: 55%; } }
+@media (max-width: 768px) {
+  .login-image-container { display: none; }
+  .login-form-container { padding: 32px 20px 80px; min-width: 0; }
+  .login-form-container h1 { font-size: 28px; margin-bottom: 28px; }
+}
+@media (max-width: 600px) {
+  .header-inner { gap: 12px; }
+  .header-left { max-width: 52%; min-width: 0; }
+  .header-user { max-width: 44%; }
+  .header-user-info { overflow: hidden; }
+  .header-user-role { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #header-actions { flex-shrink: 0; }
+}

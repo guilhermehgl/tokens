@@ -12,25 +12,26 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [modalMessage, setModalMessage] = useState(null);
-  const [showAboutModal, setShowAboutModal] = useState(false);
 
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
 
   const handleLogin = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
+    const selectedEmail = email;
+    const selectedPassword = password;
     setLoading(true);
 
-    if (!email || !password) {
+    if (!selectedEmail || !selectedPassword) {
       setModalMessage("Preencha e-mail e senha.");
       setLoading(false);
       return;
     }
 
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, { email, password });
+      const response = await axios.post(`${API_URL}/auth/login`, { email: selectedEmail, password: selectedPassword });
       const { token, user } = response.data;
 
       if (!token || !user) {
@@ -72,11 +73,12 @@ export default function Login() {
       </div>
 
       <div className="login-form-container">
-        <h1>Login</h1>
+        <h1>Acessar o portal</h1>
         <form onSubmit={handleLogin} className="login-form">
           <input
             type="email"
             placeholder="E-mail"
+            aria-label="E-mail"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
@@ -100,9 +102,6 @@ export default function Login() {
             {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
-        <button className="about-button" onClick={() => setShowAboutModal(true)}>
-          🛈
-        </button>
       </div>
 
       {/* Modal de mensagem */}
@@ -117,16 +116,6 @@ export default function Login() {
         </div>
       )}
 
-      {/* Modal Sobre */}
-      {showAboutModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>Sobre o App</h2>
-            <p>Este aplicativo foi desenvolvido para gerenciar tokens e empresas de forma eficiente, facilitando o controle e verificação.</p>
-            <button className="form-button" onClick={() => setShowAboutModal(false)}>OK</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

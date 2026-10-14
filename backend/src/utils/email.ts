@@ -1,12 +1,19 @@
 import nodemailer from "nodemailer";
 import type Mail from "nodemailer/lib/mailer";
 
+export function validateEmailConfiguration() {
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !/^\d+$/.test(process.env.SMTP_PORT || "") || Number(process.env.SMTP_PORT) < 1 || Number(process.env.SMTP_PORT) > 65535) {
+    throw new Error("Configure o serviço SMTP antes de habilitar o envio de e-mails.");
+  }
+}
+
 export const sendEmail = async (
   to: string,
   subject: string,
   html: string,
   attachments: Mail.Attachment[] = []
 ) => {
+  validateEmailConfiguration();
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -26,9 +33,9 @@ export const sendEmail = async (
       attachments, // opcional, se você quiser mandar logo/imagem
     })
 
-    console.log("Email enviado para:", to, "MessageId:", info.messageId);
+    console.log("Entrega de e-mail aceita pelo servidor SMTP.");
   } catch (err) {
-    console.error("Erro ao enviar email:", err);
+    console.error("Falha na entrega por SMTP.");
     throw err;
   }
 };

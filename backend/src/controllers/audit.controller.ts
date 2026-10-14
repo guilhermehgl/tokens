@@ -7,9 +7,14 @@ export const getAuditLogs = async (req: Request, res: Response) => {
     const logs = await AuditLog.find()
       .sort({ createdAt: -1 })
       .limit(100) // limita para não travar o frontend, pode ajustar
-      .populate("performedBy", "nome email"); // se quiser mostrar o nome/email do usuário
+      .populate("performedBy", "nome email").lean();
 
-    res.json({ success: true, logs });
+    // Não retornar códigos/hash eventualmente existentes em auditorias antigas.
+    res.json({ success: true, logs: logs.map(log => {
+      const info = { ...log.info };
+      delete info.token; delete info.verifiedToken; delete info.tokenHash;
+      return { ...log, info };
+    }) });
   } catch (error) {
     console.error("Erro ao buscar logs:", error);
     res.status(500).json({ message: "Erro interno" });

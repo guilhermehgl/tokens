@@ -91,7 +91,7 @@ export function classifyWhatsappFailure(status: number, body: unknown, sandbox: 
 }
 
 export function whatsappTokenMessage(companyName: string, nfNumber: string, token: string): string {
-  return `Olá!\n\nO pedido da empresa ${companyName} foi faturado.\n\nNF: ${nfNumber}\n\nToken para retirada:\n*${token}*\n\nEste token é válido por 30 dias a partir da geração.\n\nElmaz Caminhões e Ônibus`;
+  return `Olá!\n\nO pedido da empresa ${companyName} foi faturado.\n\nNF: ${nfNumber}\n\nToken para retirada:\n*${token}*\n\nEste token é válido por 30 dias a partir da geração.\n\nPortal de Tokens`;
 }
 
 export async function sendWhatsappText(phone: unknown, text: string): Promise<{ messageId: string; status: "accepted" }> {

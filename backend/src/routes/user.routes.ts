@@ -3,6 +3,7 @@ import { authMiddleware } from "../middleware/auth";
 import { getAllUsers, updateUser, deleteUser } from "../controllers/user.controller";
 import User from "../models/User";
 import bcrypt from "bcryptjs"; 
+import { isDemoIdentity } from "../demo/accounts";
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.put("/:id/reset-password", authMiddleware(["admin"]), async (req, res) =>
   try {
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+    if (isDemoIdentity(user)) return res.status(403).json({ error: "As credenciais demonstrativas não podem ser alteradas." });
 
     if (user.role === "admin") return res.status(403).json({ error: "Não é permitido alterar a senha de administradores" });
 

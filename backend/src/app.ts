@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { connectDB } from "./config/db";
+import { assertRuntime } from "./config/runtime";
 
 // Rotas
 import authRoutes from "./routes/auth.routes";
@@ -37,6 +38,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.disable("x-powered-by");
 app.use(rateLimitGeneral);
 app.use(
   helmet({
@@ -56,20 +58,30 @@ app.use("/api/companies", companyRoutes);
 app.use("/api/tokens", tokenRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/audit", auditRoutes);
+app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
+app.use((error: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  // Não expor stack, conteúdo da requisição ou detalhes dos provedores.
+  const status = error?.type === "entity.parse.failed" ? 400 : 500;
+  res.status(status).json({ message: status === 400 ? "Corpo JSON inválido." : "Não foi possível concluir a requisição." });
+});
 
 // ----------------------------
 // START SERVER
 // ----------------------------
 const PORT = Number(process.env.PORT) || 3003;
 
-connectDB()
-  .then(() => {
+if (require.main === module) {
+  try { assertRuntime(); } catch (error) { console.error((error as Error).message); process.exit(1); }
+  connectDB()
+  .then(async () => {
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Servidor rodando na porta ${PORT} e acessível na rede`);
     });
   })
   .catch((err) => {
-    console.error("Erro ao conectar no DB:", err);
+    console.error("Inicialização recusada. Confira conexão, isolamento e configuração do ambiente.");
+    process.exit(1);
   });
+}
 
 export default app;

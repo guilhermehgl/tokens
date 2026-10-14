@@ -21,8 +21,10 @@ test('Escolha de canal: destinos, padrão e WhatsApp desabilitado para empresa a
   try {
     const { default: DeliveryOptions } = await server.ssrLoadModule('/src/components/TokenDeliveryOptions.jsx');
     const company = { _id: 'test-company', emailReferencia: 'teste@example.com', telefone: '+5531999999999' };
-    const render = (recipient, channel = 'email') => renderToStaticMarkup(React.createElement(DeliveryOptions, { company: recipient, channel, onChange() {} }));
+    const render = (recipient, channel = 'email') => renderToStaticMarkup(React.createElement(DeliveryOptions, { company: recipient, channel, disabled: true, onChange() {} }));
     const email = render(company);
+    assert.match(email, /<fieldset[^>]*disabled=""/);
+    assert.match(email, /Envio externo \(desabilitado\)/);
     assert.match(email, /teste@example.com/);
     assert.match(email, /\+55 \(31\) 99999-9999/);
     assert.match(email, /checked="" value="email"/);

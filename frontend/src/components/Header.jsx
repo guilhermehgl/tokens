@@ -1,7 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { roleLabels } from "./AdminUI";
-import logo from "../assets/maza-logo.png";
 
 export default function Header() {
   const { user } = useContext(AuthContext);
@@ -9,7 +8,7 @@ export default function Header() {
     <header className="app-header">
       <div className="header-inner">
       <div className="header-left">
-        <img src={logo} alt="Maza Tarraf" />
+        <span className="portal-brand">Portal de Tokens</span>
       </div>
       {user && <div className="header-user">
         <span className="header-avatar" aria-hidden="true">{(user.nome || user.email || "U").charAt(0).toUpperCase()}</span>

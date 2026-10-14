@@ -9,7 +9,6 @@ export interface IAuditInfo {
   emailReferencia?: string;
   nfNumber?: string;
   tokenId?: string;
-  verifiedToken?: string;
   expiresAt?: Date;
   [key: string]: any; // permite outros dados adicionais
 }

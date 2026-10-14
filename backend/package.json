@@ -1,5 +1,5 @@
 {
-  "name": "maza-tokens",
+  "name": "portal-tokens-api",
   "version": "1.0.0",
   "main": "index.js",
   "engines": {
@@ -10,10 +10,12 @@
     "build": "tsc",
     "test:delivery": "npm run build && node --test tests/token-delivery.test.cjs",
     "test:email": "npm run build && node --test tests/email.test.cjs",
-  "test:phone": "npm run build && node --test tests/company-phone.test.cjs",
+    "test:phone": "npm run build && node --test tests/company-phone.test.cjs",
     "start": "node dist/src/app.js",
-    "admin": "node dist/scripts/createAdmin.js",
-    "admin:dev": "tsx src/scripts/createAdmin.ts"
+    "admin": "node dist/src/scripts/createAdmin.js",
+    "admin:dev": "tsx src/scripts/createAdmin.ts",
+    "test": "npm run build && node --test tests/*.test.cjs",
+    "seed": "tsx src/scripts/seedDemo.ts"
   },
   "keywords": [],
   "author": "",
@@ -43,6 +45,7 @@
     "@types/ioredis": "^4.28.10",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^24.6.0",
+    "mongodb-memory-server": "^11.3.0",
     "tsx": "^4.23.15",
     "typescript": "^5.9.2"
   }

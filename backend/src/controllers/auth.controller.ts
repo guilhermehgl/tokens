@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User, { IUser } from "../models/User";
 import { Types } from "mongoose";
+import { isDemoIdentity } from "../demo/accounts";
 
 // Função para gerar JWT
 const generateJWT = (id: string, role: string): string => {
@@ -20,6 +21,9 @@ interface AuthRequest extends Request {
 export const register = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { nome, email, password, role } = req.body;
+    if (typeof email !== "string" || isDemoIdentity({ email }) || !["vendedor", "verificador"].includes(role)) {
+      res.status(400).json({ message: "Informe um perfil permitido e um e-mail não reservado." }); return;
+    }
 
     if (!nome || !email || !password || !role) {
       res.status(400).json({ message: "Todos os campos são obrigatórios" });
@@ -74,13 +78,16 @@ export const register = async (req: AuthRequest, res: Response): Promise<void> =
 export const login = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
+    if (typeof email !== "string" || typeof password !== "string") {
+      res.status(401).json({ message: "Usuário ou senha inválidos" }); return;
+    }
 
     if (!email || !password) {
       res.status(400).json({ message: "E-mail e senha são obrigatórios" });
       return;
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
     if (!user) {
       res.status(401).json({ message: "Usuário ou senha inválidos" });
       return;
@@ -114,16 +121,14 @@ export const login = async (req: AuthRequest, res: Response): Promise<void> => {
 // Rota para renovar token
 export const refreshToken = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
-    const role = req.user?.role;
+    const userId = req.userId;
+    const role = req.userRole;
 
     if (!userId || !role) {
       return res.status(401).json({ message: "Usuário inválido" });
     }
 
-    const token = jwt.sign({ id: userId, role }, process.env.JWT_SECRET as string, {
-      expiresIn: "11h",
-    });
+    const token = generateJWT(userId, role);
 
     res.json({ success: true, token });
   } catch (err) {

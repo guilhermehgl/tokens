@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
 
   const inactivityTimeout = useRef(null);
   const INACTIVITY_LIMIT = 11 * 60 * 60 * 1000; // 11h em ms

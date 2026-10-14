@@ -1,6 +1,6 @@
 # WhatsApp — demonstração Vonage Messages API Sandbox
 
-A aplicação Vonage é **Tokens - Whatsapp Sandbox**. O e-mail continua via Nodemailer/MJML/SMTP; WhatsApp utiliza HTTPS v1 com JWT RS256, usando `jsonwebtoken` e `fetch` já disponíveis. Nenhuma dependência adicional foi instalada.
+O portal gera o token diretamente na tela; as opções de envio estão desabilitadas. Este documento descreve a integração preservada para referência. O e-mail continua via Nodemailer/MJML/SMTP; WhatsApp utiliza HTTPS v1 com JWT RS256, usando `jsonwebtoken` e `fetch` já disponíveis. Nenhuma dependência adicional foi instalada.
 
 ## Configuração local
 
@@ -12,9 +12,9 @@ Para Sandbox: `https://messages-sandbox.nexmo.com/v1/messages`. O remetente é o
 
 ## Fluxo
 
-`POST /api/tokens/generate` recebe `companyId`, `nfNumber` e `deliveryChannel` (`email` ou `whatsapp`). Ausência de canal mantém `email` como padrão. Autenticação e permissões existentes foram preservadas.
+`POST /api/tokens/generate` recebe `companyId` e `nfNumber`, retorna o código ao usuário autenticado e não chama os provedores, independentemente de `deliveryChannel`.
 
-WhatsApp exige `Company.telefone` válido em E.164. Antes da geração, são conferidos telefone e configuração; números inválidos/ausentes não criam token. O serviço remove o `+` no payload Vonage, sem alterar o telefone salvo. Empresas antigas sem telefone continuam gerando por e-mail.
+A função `deliverToken` preserva o template MJML, SMTP e o fluxo Vonage, mas não é chamada pela geração. O serviço WhatsApp valida telefone E.164 e configuração antes de enviar. Reativar envios exige uma alteração explícita no código.
 
 ### Identificador diferente no Sandbox
 
@@ -30,7 +30,7 @@ A ordem existente de persistir antes de enviar foi mantida. Se o envio falhar de
 
 ## Imagem institucional
 
-`WHATSAPP_TOKEN_IMAGE_URL` configura a URL HTTPS pública da mídia. Quando preenchida, o serviço envia uma única mensagem `message_type: image` com `image.url` e `image.caption`; a legenda contém NF, token em texto/negrito e validade, com assinatura Elmaz Caminhões e Ônibus. Não há segundo envio ou fallback silencioso se a requisição falhar. Sem URL, mantém o modo texto existente. A auditoria e o controller permanecem inalterados.
+`WHATSAPP_TOKEN_IMAGE_URL` configura a URL HTTPS pública da mídia. Quando preenchida, o serviço envia uma única mensagem `message_type: image` com `image.url` e `image.caption`; a legenda contém NF, token em texto/negrito e validade, com assinatura Portal de Tokens. Não há segundo envio ou fallback silencioso se a requisição falhar. Sem URL, mantém o modo texto existente. A auditoria e o controller permanecem inalterados.
 
 A URL Google gstatic foi autorizada provisoriamente para o teste e respondeu HTTP 200, image/jpeg, sem login. É uma miniatura externa, sem garantia de estabilidade ou identidade byte a byte com `frontend/src/assets/images.jpeg`. O arquivo local e seus imports não foram alterados. Para produção, substituir por URL estável da imagem original, sem autenticação. O serviço rejeita URLs locais, IPs literais e credenciais; a acessibilidade externa e eventuais resoluções DNS privadas devem ser verificadas na configuração da hospedagem, não são garantidas pela validação sintática. Não usa caminho local do frontend.
 
