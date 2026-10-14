@@ -1,32 +1,82 @@
 # Portal de Tokens
 
-Aplicação full stack para controlar a retirada de pedidos por códigos de uso único. Adaptada de um cenário empresarial para apresentação pública, com identidade neutra e dados fictícios.
+Aplicação full stack para gerar e validar códigos de retirada de pedidos vinculados a notas fiscais, com autenticação JWT, três perfis de acesso e histórico de operações.
 
-## Funcionalidades
+Criado para uma necessidade empresarial e adaptado para portfólio público com identidade neutra, dados fictícios e integrações de mensagens desabilitadas no fluxo de geração. A separação entre vendedor, verificador e administrador representa responsabilidades distintas na emissão, liberação e gestão do acesso.
 
-| Perfil | Acesso |
-| --- | --- |
-| Administrador | Usuários, empresas e auditoria |
-| Vendedor | Cadastro de empresas e geração de tokens vinculados à NF |
-| Verificador | Validação de tokens, retiradas e pendências |
+## Demonstração online
 
-Existe uma única aplicação, com login normal por e-mail e senha. Não há seleção de modo nem atalhos de acesso na tela. JWT, bcrypt e permissões por perfil permanecem ativos.
+[Portal de Tokens](https://tokens-theta-dun.vercel.app/)
 
-## Acessos para demonstração
+Verificação em 14/10/2026: carregamento, login dos três perfis e consulta administrativa disponíveis. **A geração publicada está bloqueada por incompatibilidade entre frontend e API**: a interface solicita exibição na tela, mas o backend hospedado exige um canal externo. Não selecione canais de mensagem para contornar o erro. A correção da branch precisa de revisão e deploy autorizado; testes locais não comprovam que a versão publicada recebeu as mudanças. O endereço anterior `tokens-mu.vercel.app` retorna `DEPLOYMENT_NOT_FOUND`.
 
-| Perfil | Login | Senha |
+Credenciais da hospedagem, fornecidas pelo autor para a demonstração:
+
+| Perfil | E-mail | Senha pública |
 | --- | --- | --- |
-| Administrador | admin@demo.local | DemoTokens!2026 |
-| Vendedor | vendedor@demo.local | DemoTokens!2026 |
-| Verificador | verificador@demo.local | DemoTokens!2026 |
+| Administrador | admin@admin.com | `123$qwer` |
+| Vendedor | vendedor@vendedor.com | `123$qwer` |
+| Verificador | verificador@verificador.com | `123$qwer` |
 
-As contas acima são criadas pelo seed de preparação, descrito abaixo. Não existe autenticação especial: digite as credenciais no formulário de login. As contas compartilhadas são protegidas contra alteração e exclusão para manter o acesso disponível.
+Essas identidades também são protegidas no código corrigido. A versão hospedada ainda exibe ações administrativas para elas; não representa a validação das novas proteções. Nunca use essas senhas em contas reais.
+
+## Funcionalidades por perfil
+
+| Perfil | Responsabilidades |
+| --- | --- |
+| Administrador | Consultar usuários, empresas e auditoria; administrar usuários quando a conta não é demonstrativa |
+| Vendedor | Cadastrar empresas fictícias e gerar tokens vinculados à NF |
+| Verificador | Validar retirada, consultar tokens pendentes e utilizados no dia |
+
+Contas demonstrativas administradoras possuem acesso de consulta aos usuários. A autorização é feita na API; esconder botões não é a proteção de segurança.
+
+## Tecnologias e arquitetura
+
+React 19, Vite 7, React Router, Axios e CSS no frontend. Node.js, Express 5, TypeScript em modo estrito, Mongoose, MongoDB, JWT, bcrypt e Helmet no backend. Testes com o runner nativo do Node e MongoDB temporário.
+
+```mermaid
+flowchart TD
+  A[Frontend React] -->|HTTP + Bearer JWT| B[API Express]
+  B --> C[Autenticação e autorização por perfil]
+  C --> D[Controllers e serviço de tokens]
+  D --> E[(MongoDB)]
+  D --> F[Helper de auditoria]
+  F --> E
+```
+
+As rotas aplicam autenticação, autorização e limites. Controllers validam contratos HTTP; o serviço de tokens trata colisões; modelos definem estrutura e índices. Diálogos, tabelas e campos são compartilhados entre painéis. Os painéis carregam sob demanda.
+
+## Segurança e integridade
+
+- Códigos de seis caracteres com pelo menos um número, gerados com `crypto.randomInt`. Somente SHA-256 é persistido; o código aparece no resultado da geração autorizada e não é salvo em URL ou localStorage.
+- Índice único em `tokenHash` e até cinco tentativas em colisão. Falha controlada em HTTP 503, sem sobrescrita. A inicialização aguarda índices e recusa dados incompatíveis; veja o diagnóstico somente leitura antes de migrar bases existentes.
+- Consumo com `findOneAndUpdate` condicionado a hash, `used: false` e validade futura: apenas uma retirada vence entre requisições concorrentes.
+- Validade de 30 dias, verificada na própria operação. TTL remove registros expirados de forma assíncrona; a unicidade cobre os registros retidos.
+- JWT revalidado contra o usuário atual em cada requisição. Usuário removido ou mudança de perfil invalidam a sessão anterior.
+- Contas públicas protegidas também nos endpoints alternativos; admin demo não modifica usuários comuns. Empresas fictícias iniciais protegidas e cota compartilhada de 30 escritas/hora por conta demo.
+- Auditoria de geração, consumo e cadastros, sanitizada recursivamente na escrita e leitura. Falhas secundárias têm registro seguro e não transformam uma retirada efetivada em falso erro HTTP. **A auditoria não é transacional e pode ficar incompleta.**
+- E-mails normalizados, nomes e senhas validados, CPF/CNPJ por tipo e comprimento, telefone E.164 e índice único de documento. A validação não consulta órgãos oficiais nem verifica dígitos verificadores dos documentos fictícios.
+- Limitadores independentes com limpeza de IPs inativos, memória limitada e `Retry-After`. CORS explícito, JSON até 32 KiB e headers Helmet. Proxy confiável e HSTS exigem configuração explícita.
+
+[Detalhes, limites e migração segura](docs/INTEGRIDADE.md).
+
+## Capturas reais
+
+Capturas da versão local corrigida, utilizando exclusivamente o banco temporário e dados fictícios. Não representam o estado do deploy público.
+
+| Login | Administração |
+| --- | --- |
+| ![Login](docs/images/login.jpg) | ![Administração](docs/images/admin.jpg) |
+
+| Geração | Verificação |
+| --- | --- |
+| ![Geração](docs/images/generation.jpg) | ![Verificação](docs/images/verification.jpg) |
+
+[Auditoria](docs/images/audit.jpg) · [Modal em celular](docs/images/mobile.jpg)
 
 ## Executar localmente
 
-Requisitos: Node.js 24.15+ (linha 24) ou 22.22.2+, npm e MongoDB disponível.
-
-Na primeira instalação:
+Requisitos: Node.js 24.15+ (linha 24) ou 22.22.2+, npm e MongoDB **local e isolado**. O CI testa as linhas 22 e 24. Não aponte exemplos ou seeds para um banco empresarial.
 
 ```powershell
 npm run setup
@@ -35,60 +85,75 @@ Copy-Item frontend/.env.example frontend/.env
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Não sobrescreva arquivos .env existentes. No backend/.env configure MONGO_URI para seu banco e JWT_SECRET com o segredo gerado (mínimo 32 caracteres). O exemplo usa MongoDB local em mongodb://127.0.0.1:27017/portal_tokens_demo. No frontend/.env use VITE_API_URL=/api para o proxy local.
-
-Para preparar as contas e empresas fictícias, execute uma vez:
+Preserve `.env` preexistentes. Configure `MONGO_URI=mongodb://127.0.0.1:27017/portal_tokens_demo`, `JWT_SECRET` com o valor gerado (mínimo 32 caracteres) e `VITE_API_URL=/api`. Nenhuma chave SMTP/Vonage é necessária.
 
 ```powershell
 npm --prefix backend run seed
-```
-
-O seed é idempotente, não apaga dados nem redefine senhas existentes. Ele aceita um banco vazio ou já identificado pelo seu marcador; recusa bases preexistentes com dados sem esse marcador. Essa preparação não é outra forma de iniciar o aplicativo.
-
-Sempre inicie o projeto pela pasta raiz com:
-
-```powershell
 npm start
 ```
 
-Frontend: http://localhost:5173. API: http://localhost:3003/api. Não existe comando separado de inicialização da demonstração ou variável APP_MODE.
+O seed exige nome terminado em `_demo` e banco vazio ou marcador conhecido. É idempotente: não apaga dados e não redefine senhas existentes. Frontend em `http://localhost:5173`; API em `http://localhost:3003/api`. Health check em `/api/health`.
 
-## Experimentar o fluxo
+### Contas do seed local
 
-1. Faça login como vendedor com as credenciais acima.
-2. Escolha uma empresa fictícia, clique em Gerar token e informe uma NF de nove dígitos, como 000000101.
-3. E-mail e WhatsApp aparecem desabilitados. Gere o código e copie-o diretamente do modal.
-4. Saia e entre como verificador; informe o código para liberar a retirada.
-5. Uma segunda utilização será recusada. Consulte as retiradas e a auditoria conforme o perfil.
+| Perfil | E-mail | Senha pública |
+| --- | --- | --- |
+| Administrador | admin@demo.local | `DemoTokens!2026` |
+| Vendedor | vendedor@demo.local | `DemoTokens!2026` |
+| Verificador | verificador@demo.local | `DemoTokens!2026` |
 
-A API sempre retorna o código ao gerador autorizado e nunca envia mensagens, mesmo se uma requisição informar e-mail ou WhatsApp como canal. O código aparece somente no resultado da geração, sem gravação no navegador ou em URLs. O banco armazena apenas seu SHA-256, validade de 30 dias e estado de uso. A verificação usa operação atômica no MongoDB para impedir duas liberações concorrentes. Respostas de geração usam Cache-Control: no-store.
+Não há login automático nem bypass de autenticação. Essas contas diferem das contas existentes na hospedagem.
 
-## Arquitetura e integrações preservadas
+### Experimentar o fluxo local
 
-- Frontend: React, Vite, React Router e Axios.
-- Backend: Express, TypeScript e Mongoose.
-- MongoDB: usuários, empresas, tokens e auditoria.
-- JWT e bcrypt: autenticação e senhas com hash.
-- E-mail: Nodemailer, SMTP e template MJML, preservados em backend/src/utils/email.ts e na função deliverToken de backend/src/controllers/token.controller.ts.
-- WhatsApp: Vonage Messages API, JWT RS256, validações e tratamento de erros preservados em backend/src/services/whatsapp.service.ts. Documentação: [WHATSAPP.md](backend/WHATSAPP.md).
+1. Entre como vendedor e escolha uma empresa fictícia.
+2. Gere o token com uma NF de nove dígitos, por exemplo `000000101`.
+3. Copie o código exibido; e-mail e WhatsApp permanecem desabilitados.
+4. Saia, entre como verificador e valide o código.
+5. Repita a verificação para conferir a recusa do segundo uso.
+6. Consulte o registro com o administrador demo.
 
-As integrações fazem parte da implementação original e permanecem no código, mas a geração não as chama. Credenciais SMTP/Vonage não são necessárias para usar o portal; preenchê-las não habilita envios. Uma futura reativação exige alterar explicitamente o fluxo no código. Aceite da Vonage não representa confirmação de entrega.
+### Base existente
 
-## Build e hospedagem
+Não remova registros para criar índices. Antes de atualizar uma base conhecida e autorizada, configure seu nome exato e execute o diagnóstico:
 
-Backend: diretório backend, build npm ci --include=dev && npm run build, start npm start. Configure MONGO_URI, JWT_SECRET e CORS_ORIGINS. Health check: GET /api/health.
+```powershell
+$env:INTEGRITY_DB_NAME="portal_tokens_demo"
+npm --prefix backend run check:integrity
+```
 
-Frontend: diretório frontend, preset Vite, build npm run build, saída dist. Para API separada use VITE_API_URL=https://api.example.com/api e inclua o domínio exato do frontend em CORS_ORIGINS. Mudanças em variáveis Vite exigem novo build. frontend/vercel.json mantém as rotas React acessíveis diretamente.
+O comando imprime apenas contagens e não modifica registros ou índices. [Procedimento de migração e limitações](docs/INTEGRIDADE.md).
 
-## Verificação
+## Testes e builds
 
 ```powershell
 npm --prefix backend test
-npm --prefix frontend run test:delivery
-npm --prefix frontend run test:phone
+npm --prefix frontend test
 npm --prefix frontend run build
+npm --prefix backend audit
+npm --prefix frontend audit
 ```
 
-Os testes HTTP utilizam MongoDB temporário isolado; testes de SMTP/Vonage utilizam mocks e transportes locais, sem envio real. O MongoDB temporário serve somente aos testes e não é outro modo de iniciar o aplicativo.
+O teste do backend inclui compilação TypeScript. Testes HTTP usam MongoDB temporário, sem credenciais externas; integrações SMTP/Vonage utilizam mocks e transporte MIME local, sem envio real. A primeira execução pode baixar o binário MongoDB do fornecedor. Se houver bloqueio de escrita na pasta temporária do Windows, configure `TEMP` e `TMP` para uma pasta de testes gravável e isolada.
 
-Use dados fictícios: os cadastros são compartilhados entre visitantes conforme o perfil. Arquivos .env, chaves, dumps e histórico empresarial não devem acompanhar uma publicação. A preparação local não publica alterações no GitHub ou em servidores.
+Cobertura inclui autenticação, perfis, identidades demo, colisões e esgotamento, índices únicos, consumo concorrente real, expiração, auditoria, falhas secundárias, sanitização, validação, seed idempotente, recusa de banco desconhecido, CORS, headers, payload e rate limiting. Testes de utilitários frontend não substituem validação visual e de interação no navegador.
+
+## CI
+
+[Workflow de qualidade](.github/workflows/ci.yml): pull requests para `master`, pushes em `master` e na branch de melhorias. Matriz Node 22/24, `npm ci` em cada pacote, TypeScript, testes backend/frontend, build frontend e auditoria de dependências de produção. Permissão somente leitura de conteúdo; nenhum deploy configurado no workflow.
+
+O resultado real deve ser consultado na aba Actions do commit/PR; a existência do YAML não comprova execução bem-sucedida.
+
+## Integrações e limitações
+
+Nodemailer/SMTP/MJML e Vonage Messages API permanecem no código como referência técnica. A geração da versão corrigida **não chama os provedores**, mesmo que o cliente peça envio. Credenciais de integração não habilitam mensagens. Reativação exigiria uma mudança explícita no fluxo. [Integração WhatsApp](backend/WHATSAPP.md).
+
+A demonstração compartilha cadastros e não oferece isolamento por visitante. Limitadores são por processo; múltiplas instâncias precisam de armazenamento compartilhado antes de escalar. Não há limpeza automática, reset destrutivo, garantia transacional de auditoria, revogação imediata de JWT no logout ou unicidade de código após exclusão TTL. JWT em localStorage mantém risco de exposição por XSS; migração HttpOnly exige revisão do contrato de autenticação.
+
+Vários tokens ativos para a mesma empresa/NF continuam permitidos. A regra de reemissão depende de decisão de negócio. O [estado da publicação](docs/PUBLICACAO.md) distingue testes locais de verificação externa.
+
+## Autor e licença
+
+[Guilherme Lima](https://github.com/guilhermehgl). Contato profissional pelo perfil GitHub.
+
+Licença de reutilização pendente de confirmação dos direitos aplicáveis. Nenhuma licença MIT/Apache foi adicionada. A licença das fontes Roboto permanece preservada. O histórico anterior contém identidade empresarial antiga e não foi reescrito.

@@ -6,7 +6,7 @@ export interface IUser extends Document {
   password: string;
   role: "admin" | "vendedor" | "verificador";
   isDemo?: boolean;
-  recoveryUUID?: string; 
+  recoveryUUID?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,7 +17,7 @@ const userSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true, trim: true, lowercase: true, maxlength: 254, match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
     password: { type: String, required: true },
     role: { type: String, enum: ["admin", "vendedor", "verificador"], required: true },
-    recoveryUUID: { type: String, default: null }, 
+    recoveryUUID: { type: String, default: null },
     isDemo: { type: Boolean, default: false },
   },
   { timestamps: true }

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
 import Token from "../models/Token";
-import { Company, CompanyDocument } from "../models/Company"; 
+import { Company, CompanyDocument } from "../models/Company";
 import { hashToken } from "../utils/tokenUtils";
 import { sendEmail, validateEmailConfiguration } from "../utils/email";
 import { logAction } from "../utils/audit";
@@ -45,10 +45,10 @@ export async function deliverToken(company: CompanyDocument, nfNumber: string, p
           </mj-body>
         </mjml>
       `;
-  
+
       // Converte MJML → HTML
       const { html } = await mjml2html(mjmlTemplate);
-  
+
       // Envia email
       await sendEmail(
         company.emailReferencia,
