@@ -56,6 +56,29 @@ test('HTTP: login normal, permissões, token na tela e uso único sem notificaç
   assert.equal((await api('/users/' + seller.id, { token: sessions.admin, method: 'PUT', body: { role: 'admin' } })).status, 403);
   assert.equal((await api('/users/' + seller.id + '/reset-password', { token: sessions.admin, method: 'PUT', body: { newPassword: 'changed' } })).status, 403);
   const company = await Company.findOne();
+  for (const channel of [undefined, 'screen', 'email', 'whatsapp']) {
+    await t.test(`contrato HTTP: ${channel ?? 'canal omitido'} sempre retorna na tela`, async () => {
+      const result = await api('/tokens/generate', { token: sessions.vendedor, body: {
+        companyId: company.id, nfNumber: '000000102',
+        ...(channel === undefined ? {} : { deliveryChannel: channel }),
+      } });
+      assert.equal(result.status, 200);
+      assert.equal(result.data.deliveryChannel, 'screen');
+      assert.match(result.data.token, /^[A-Z0-9]{6}$/);
+      assert.equal(result.headers.get('cache-control'), 'no-store');
+      const record = await Token.findById(result.data.tokenId).lean();
+      assert.equal(record.used, false);
+      assert.equal(record.tokenHash, require('node:crypto').createHash('sha256').update(result.data.token).digest('hex'));
+      assert.ok(!JSON.stringify(record).includes(result.data.token));
+      const audit = await mongoose.connection.db.collection('auditlogs').find().toArray();
+      assert.ok(!JSON.stringify(audit).includes(result.data.token));
+      const generations = audit.filter(entry => entry.action === 'GENERATE_TOKEN');
+      assert.equal(generations.length, [undefined, 'screen', 'email', 'whatsapp'].indexOf(channel) + 1);
+      assert.ok(generations.every(entry => entry.info.deliveryChannel === 'screen'));
+      assert.equal(smtp.mock.callCount(), 0);
+      // O mock de fetch acima também recusa qualquer conexão com a Vonage.
+    });
+  }
   const generated = await api('/tokens/generate', { token: sessions.vendedor, body: { companyId: company.id, nfNumber: '000000101', deliveryChannel: 'whatsapp' } });
   assert.equal(generated.status, 200); assert.match(generated.data.token, /^[A-Z0-9]{6}$/);
   assert.equal(generated.headers.get('cache-control'), 'no-store');
