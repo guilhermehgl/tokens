@@ -1,19 +1,20 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import Login from "../pages/Login";
-import DashboardVendedor from "../pages/VendedorDashboard.jsx";
-import DashboardVerificador from "../pages/VerificadorDashboard.jsx";
-import DashboardAdmin from "../pages/AdminDashboard.jsx";
+const DashboardVendedor = lazy(() => import("../pages/VendedorDashboard.jsx"));
+const DashboardVerificador = lazy(() => import("../pages/VerificadorDashboard.jsx"));
+const DashboardAdmin = lazy(() => import("../pages/AdminDashboard.jsx"));
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
 const AppRoutes = () => {
   return (
-      <Routes>
+      <Suspense fallback={<p role="status">Carregando painel...</p>}><Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/vendedor" element={<ProtectedRoute allowedRoles={["vendedor"]}><DashboardVendedor /></ProtectedRoute>} />
         <Route path="/verificador" element={<ProtectedRoute allowedRoles={["verificador"]}><DashboardVerificador /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><DashboardAdmin /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/login" />} />
-      </Routes>
+      </Routes></Suspense>
   );
 };
 

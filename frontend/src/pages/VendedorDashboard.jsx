@@ -1,6 +1,6 @@
 // src/pages/VendedorDashboard.jsx
 import React, { useEffect, useState, useContext, useRef } from "react";
-import axios from "axios";
+import axios from "../api/client";
 import { FiLogOut, FiPlus, FiKey } from "react-icons/fi";
 import { AuthContext } from "../context/AuthContext";
 import { HeaderActions, Button, PageHeader, Card, Field, SearchInput, DataTable, StateMessage, Dialog } from "../components/AdminUI";
@@ -68,7 +68,7 @@ export default function VendedorDashboard() {
         setCompanies([]);
       }
     } catch (err) {
-      console.error("Erro ao carregar empresas:", err);
+      console.error("Erro ao carregar empresas:");
       setModalMessage("Erro ao carregar empresas.");
     } finally {
       setLoading(false);
@@ -182,7 +182,7 @@ export default function VendedorDashboard() {
       setNewCompany({ razaoSocial: "", documento: "", emailReferencia: "" });
       fetchCompanies();
     } catch (err) {
-      console.error("Erro ao cadastrar empresa:", err);
+      console.error("Erro ao cadastrar empresa:");
       setRegistrationError(err.response?.data?.message || "Erro ao cadastrar empresa. Tente novamente.");
     } finally {
       submitting.current = false;

@@ -1,6 +1,6 @@
 // src/pages/VerificadorDashboard.jsx
 import React, { useState, useEffect, useContext, useRef } from "react";
-import axios from "axios";
+import axios from "../api/client";
 import { FiLogOut, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import { AuthContext } from "../context/AuthContext";
 import { HeaderActions, Button, PageHeader, Card, Field, SearchInput, DataTable, StateMessage, Dialog, AdminTabs } from "../components/AdminUI";
@@ -49,7 +49,7 @@ export default function VerificadorDashboard() {
           setVerifiedTokens([]);
         }
       } catch (err) {
-        console.error("Erro ao buscar tokens verificados:", err);
+        console.error("Erro ao buscar tokens verificados:");
         setVerifiedTokens([]);
       } finally {
         setLoadingTokens(false);
@@ -77,7 +77,7 @@ export default function VerificadorDashboard() {
           setUnverifiedTokens([]);
         }
       } catch (err) {
-        console.error("Erro ao buscar tokens não verificados:", err);
+        console.error("Erro ao buscar tokens não verificados:");
         setUnverifiedTokens([]);
       } finally {
         setLoadingUnverified(false);

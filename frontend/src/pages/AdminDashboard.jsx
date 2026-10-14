@@ -1,6 +1,6 @@
 // src/pages/AdminDashboard.jsx
 import React, { useEffect, useState, useContext, useRef } from "react";
-import axios from "axios";
+import axios from "../api/client";
 import { FiLogOut, FiPlus, FiEye, FiEyeOff, FiTrash2, FiEdit2 } from "react-icons/fi";
 import { AuthContext } from "../context/AuthContext";
 import AuditDetails from "../components/AuditDetails";
@@ -67,6 +67,7 @@ export default function AdminDashboard() {
   const API_URL = import.meta.env.VITE_API_URL || '/api';
   const token = localStorage.getItem("token");
   const currentUserEmail = user?.email;
+  const demo = Boolean(user?.isDemo);
 
   const fetchUsers = async () => {
     try {
@@ -75,7 +76,7 @@ export default function AdminDashboard() {
       });
       setUsers(response.data);
     } catch (error) {
-      console.error("Erro ao buscar usuários:", error);
+      console.error("Erro ao buscar usuários:");
       setModal({ visible: true, title: "Erro", message: "Falha ao carregar usuários." });
     } finally {
       setLoadingUsers(false);
@@ -89,7 +90,7 @@ export default function AdminDashboard() {
       });
       setLogs(response.data);
     } catch (error) {
-      console.error("Erro ao buscar auditoria:", error);
+      console.error("Erro ao buscar auditoria:");
       setModal({ visible: true, title: "Erro", message: "Falha ao carregar logs de auditoria." });
     } finally {
       setLoadingLogs(false);
@@ -159,7 +160,7 @@ export default function AdminDashboard() {
       setRole("vendedor");
       fetchUsers();
     } catch (error) {
-      console.error("Erro ao criar usuário:", error.response || error.message);
+      console.error("Erro ao criar usuário:");
       if (error.response?.data?.message?.includes("email")) {
         setCreateError("Este email já está cadastrado.");
       } else {
@@ -188,7 +189,7 @@ export default function AdminDashboard() {
       setModal({ visible: true, title: "Sucesso", message: "Usuário excluído com sucesso!" });
       fetchUsers();
     } catch (error) {
-      console.error("Erro ao excluir usuário:", error.response || error.message);
+      console.error("Erro ao excluir usuário:");
       setModal({ visible: true, title: "Erro", message: "Erro ao excluir usuário." });
     } finally {
       setConfirmModal({ visible: false, userId: null, userRole: "" });
@@ -246,7 +247,7 @@ const formatDocumento = (value = "", tipo = "CNPJ") => {
       setEditingUserId(null);
       setNewPassword("");
     } catch (error) {
-      console.error("Erro ao alterar senha:", error.response || error.message);
+      console.error("Erro ao alterar senha:");
       setPasswordError("Erro ao alterar senha.");
     } finally {
       passwordRequestRef.current = false;
@@ -268,7 +269,7 @@ const formatDocumento = (value = "", tipo = "CNPJ") => {
       setCompanies([]);
     }
   } catch (err) {
-    console.error("Erro ao carregar empresas:", err);
+    console.error("Erro ao carregar empresas:");
     setModal({ visible: true, title: "Erro", message: "Erro ao carregar empresas." });
   } finally {
     setLoadingCompanies(false);
@@ -340,7 +341,7 @@ const saveEditing = async (companyId) => {
     cancelEditing();
     fetchCompanies();
   } catch (err) {
-    console.error("Erro ao atualizar empresa:", err);
+    console.error("Erro ao atualizar empresa:");
     setCompanyEditError(err.response?.data?.message || "Erro ao atualizar empresa.");
   } finally {
     companyRequestRef.current = false;
@@ -412,13 +413,14 @@ useEffect(() => {
         <>
           <HeaderActions><Button variant="ghost" onClick={() => setConfirmLogoutModal(true)}><FiLogOut size={16} aria-hidden="true" />Sair</Button></HeaderActions>
           <PageHeader title="Painel Administrativo" description="Gerencie usuários, empresas e atividades do sistema." />
+          {demo && <p role="status">Demonstração compartilhada: usuários disponíveis somente para consulta. Use dados fictícios.</p>}
           <AdminTabs view={view} onChange={setView} />
 
           {view === "users" && (
             <div className="admin-stack">
               <Card title="Lista de usuários" toolbar={<div className="users-list-toolbar">
                 <SearchInput label="Pesquisar usuários por nome ou e-mail" placeholder="Pesquisar nome ou e-mail" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                <Button variant="primary" ref={createTriggerRef} onClick={() => { setCreateError(""); setShowCreatePassword(false); setCreateUserOpen(true); }}><FiPlus size={18} aria-hidden="true" />Criar usuário</Button>
+                {!demo && <Button variant="primary" ref={createTriggerRef} onClick={() => { setCreateError(""); setShowCreatePassword(false); setCreateUserOpen(true); }}><FiPlus size={18} aria-hidden="true" />Criar usuário</Button>}
               </div>}>
                 {loadingUsers ? <StateMessage loading>Carregando usuários...</StateMessage> : filteredUsers.length > 0 ? (
                   <DataTable label="Usuários cadastrados" columns={["Usuário", "E-mail", "Perfil", "Ações"]}>
@@ -428,10 +430,10 @@ useEffect(() => {
                         <td className="admin-secondary">{userItem.email}</td>
                         <td><Badge tone={userItem.role === "admin" ? "primary" : "neutral"}>{roleLabels[userItem.role] || userItem.role}</Badge></td>
                         <td><div className="admin-row-actions">
-                          {!userItem.isDemo && userItem.role !== "admin" && currentUserEmail !== userItem.email && (
+                          {!demo && !userItem.isDemo && userItem.role !== "admin" && currentUserEmail !== userItem.email && (
                             <Button onClick={(e) => { passwordTriggerRef.current = e.currentTarget; setPasswordError(""); setNewPassword(""); setShowNewPassword(false); setEditingUserId(userItem._id); }}>Alterar senha</Button>
                           )}
-                          {!userItem.isDemo && userItem.role !== "admin" && <Button variant="danger" className="user-delete-icon" aria-label={`Excluir usuário ${userItem.nome}`} title="Excluir usuário" onClick={() => confirmDeleteUser(userItem._id, userItem.role)}><FiTrash2 size={18} aria-hidden="true" /></Button>}
+                          {!demo && !userItem.isDemo && userItem.role !== "admin" && <Button variant="danger" className="user-delete-icon" aria-label={`Excluir usuário ${userItem.nome}`} title="Excluir usuário" onClick={() => confirmDeleteUser(userItem._id, userItem.role)}><FiTrash2 size={18} aria-hidden="true" /></Button>}
                           {userItem.isDemo ? <span className="admin-muted">Conta demonstrativa protegida</span> : userItem.role === "admin" && <span className="admin-muted">Acesso administrativo</span>}
                         </div></td>
                       </tr>
@@ -451,7 +453,7 @@ useEffect(() => {
                       <td><strong>{company.razaoSocial}</strong></td>
                       <td><span className="admin-document">{formatDocumento(company.documento, company.tipoDocumento || "CNPJ")}</span></td>
                       <td><span className="admin-secondary">{company.emailReferencia}</span></td>
-                      <td><div className="admin-row-actions"><Button className="company-edit-icon" aria-label={`Editar empresa ${company.razaoSocial}`} title="Editar empresa" onClick={(e) => { companyTriggerRef.current = e.currentTarget; startEditing(company); }}><FiEdit2 size={18} aria-hidden="true" /></Button></div></td>
+                      <td><div className="admin-row-actions">{demo && company.isDemo ? <span className="admin-muted">Empresa demo protegida</span> : <Button className="company-edit-icon" aria-label={`Editar empresa ${company.razaoSocial}`} title="Editar empresa" onClick={(e) => { companyTriggerRef.current = e.currentTarget; startEditing(company); }}><FiEdit2 size={18} aria-hidden="true" /></Button>}</div></td>
                     </tr>
                   ))}
                 </DataTable>
