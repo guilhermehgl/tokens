@@ -1,0 +1,35 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const { MongoClient } = require('mongodb');
+const { inspectDeploymentReadiness } = require('../dist/src/utils/deploymentReadiness');
+
+test('diagnóstico não cria coleções/índices e detecta formatos legados e e-mails equivalentes', { timeout: 180000 }, async t => {
+  const mongo = await MongoMemoryServer.create();
+  const client = new MongoClient(mongo.getUri());
+  await client.connect();
+  t.after(async () => { await client.close(); await mongo.stop(); });
+  const db = client.db('readiness_demo');
+  const empty = await inspectDeploymentReadiness(db);
+  assert.ok(empty.indexes.every(index => index.status === 'missing'));
+  assert.equal((await db.listCollections().toArray()).length, 0);
+  await db.collection('users').insertMany([{ email: ' SAMPLE@example.com ' }, { email: 'sample@example.com' }]);
+  await db.collection('tokens').insertOne({ tokenHash: 'legacy-secret' });
+  await db.collection('companies').insertOne({ documento: '123.456.789-01' });
+  await db.collection('tokens').createIndex({ tokenHash: 1 });
+  const before = await db.collection('tokens').listIndexes().toArray();
+  const result = await inspectDeploymentReadiness(db);
+  assert.equal(result.normalizedUserEmailDuplicates.groups, 1);
+  assert.equal(result.invalidTokenHashes, 1);
+  assert.equal(result.nonCanonicalDocuments, 1);
+  assert.equal(result.indexes.find(index => index.field === 'tokenHash').status, 'conflicting');
+  assert.doesNotMatch(JSON.stringify(result), /sample@example|legacy-secret|123\.456/);
+  assert.deepEqual(await db.collection('tokens').listIndexes().toArray(), before);
+  await db.collection('users').createIndex({ email: 1 }, { unique: true });
+  await db.collection('tokens').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  const ready = await inspectDeploymentReadiness(db);
+  assert.equal(ready.indexes.find(index => index.field === 'email').status, 'ready');
+  assert.equal(ready.indexes.find(index => index.field === 'expiresAt').status, 'ready');
+  assert.equal(ready.normalizedUserEmailDuplicates.groups, 1);
+  assert.equal(await db.collection('users').countDocuments(), 2);
+});
