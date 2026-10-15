@@ -1,8 +1,22 @@
-# Estado da publicação — 14/10/2026
+# Estado e histórico da publicação
+
+## Atualização de 15/10/2026
+
+O [PR #1](https://github.com/guilhermehgl/tokens/pull/1) foi confirmado aberto, com sete commits e HEAD `eaf1131862b2058669dabf2e11d430d2479e1af2`, antes da finalização de apresentação. A `master` permanece em `eec58ac`. O CI de `eaf1131` passou em Node 22/24 nas execuções de [PR](https://github.com/guilhermehgl/tokens/actions/runs/38748769134) e [push](https://github.com/guilhermehgl/tokens/actions/runs/38748762900): 51 testes backend e 12 frontend. Esses resultados não certificam commits posteriores.
+
+O preview de `eaf1131` foi observado como Ready na etapa anterior, com a tela de login carregada. Isso não valida login remoto, geração, retirada ou compatibilidade da API. O fluxo hospedado completo continua pendente da atualização autorizada do backend. Não foram repetidos testes que gravem dados ou enviem mensagens.
+
+A inspeção somente leitura do Render confirmou o último sucesso em `96548fe` e a tentativa `eec58ac` recusada por segredo JWT abaixo do mínimo. A URI Atlas não especifica nome de banco; código/driver sem override selecionam `test`. O responsável confirmou que o banco e as quatro coleções da demonstração não contêm dados empresariais reais. A correspondência do cluster, credencial somente leitura e integridade remota ainda não foram verificadas pelo diagnóstico. Não houve conexão remota para essa verificação.
+
+A etapa de portfólio autoriza commits na branch existente, atualização do PR e preview automático da Vercel. Não autoriza merge, deploy de produção, mudanças de variáveis, Render ou MongoDB. O login agora aceita configuração pública de apresentação e, sem ela, não sugere credenciais; não foi alterada configuração externa. [Procedimento para integração segura](DEPLOY.md#integrar-o-portfólio-sem-publicar-o-backend).
+
+## Registro histórico — 14/10/2026
+
+As observações abaixo registram aquela inspeção, não representam uma nova medição de disponibilidade.
 
 Esta página separa execução local, evidências históricas e inspeção atual somente leitura. Nenhum merge, deploy manual, mudança de variável externa, migração ou alteração do banco remoto foi realizado nesta etapa.
 
-| Item | Evidência atual | Conclusão |
+| Item | Evidência registrada em 14/10 | Conclusão naquela inspeção |
 | --- | --- | --- |
 | Frontend | `https://tokens-theta-dun.vercel.app/` responde 200; Vercel indica `master`, commit `eec58ac` | CONFIRMADA a disponibilidade da interface |
 | API efetiva | Bundle público `index-qwnw2PeN.js` contém `https://tokens-xfrp.onrender.com/api` | CONFIRMADO o destino compilado de `VITE_API_URL` |
@@ -29,4 +43,4 @@ O [PR existente](https://github.com/guilhermehgl/tokens/pull/1) permanece aberto
 
 O workflow de qualidade não contém deploy, mas **a integração Vercel cria previews ao atualizar a branch/PR**; isso ocorreu na etapa anterior. Portanto, ausência de comando manual não significa ausência de deploy automático. Render também registra Auto-Deploy para `master`.
 
-Nesta etapa os novos commits são preparados localmente, sem push, até autorização para o preview automático. Homepage permanece sem anunciar o fluxo completo. [Plano de publicação, banco e rollback](DEPLOY.md).
+Naquela etapa os novos commits aguardavam autorização de push/preview; essa autorização foi concedida posteriormente, conforme atualização acima. A homepage não anuncia um fluxo completo aprovado. [Plano de publicação, banco e rollback](DEPLOY.md).

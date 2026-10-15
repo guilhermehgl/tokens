@@ -1,6 +1,21 @@
 # Publicação segura da demonstração
 
-Plano preparado em 14/10/2026. Não autoriza deploy, merge, mudança de ambiente, índice, migração ou escrita remota. Não acessar Lightsail nem o sistema empresarial original.
+Plano preparado em 14/10/2026, com orientações de integração ao portfólio atualizadas em 15/10/2026. Não autoriza deploy, merge, mudança de ambiente, índice, migração ou escrita remota. Não acessar Lightsail nem o sistema empresarial original.
+
+## Integrar o portfólio sem publicar o backend
+
+A preparação do PR e os previews da Vercel estão autorizados. Merge, alterações no Render, variáveis externas e operações MongoDB continuam fora desta etapa.
+
+Antes de um merge futuro, com autorização específica:
+
+1. No Render, abrir `tokens` → Settings → Build & Deploy → Auto-Deploy → Edit. Selecionar **Off**, salvar e confirmar o estado desativado antes do merge. Isso é uma alteração externa e não foi executada. Registrar o commit Live para comparar depois.
+2. Verificar outras automações associadas à `master`, incluindo deploy hooks e Vercel. O workflow de qualidade deste repositório não publica serviços. Um merge pode publicar o frontend de produção pela integração Vercel; se o objetivo for somente GitHub, essa automação também precisa de bloqueio autorizado antes do merge. O preview de PR autorizado não equivale a autorização de produção.
+3. Revisar o HEAD final do PR, seus testes/CI e obter autorização de merge. Integrar o PR #1 sem force push.
+4. Confirmar que a `master` contém o merge e que o Render permanece no commit Live anterior, sem novo evento de deploy. Não reativar auto-deploy até haver autorização para publicar o backend e seus efeitos no banco.
+
+Não usar merge como mecanismo implícito de publicação. Para publicar uma revisão específica posteriormente, o painel Render oferece **Manual Deploy → Deploy a specific commit**, com o SHA completo do repositório vinculado, sem exigir merge. Esse caminho pelo painel desativa auto-deploy; confirmar o estado resultante. Para corrigir JWT sem disparar uma revisão indesejada, usar **Save only** e só depois o deploy explicitamente autorizado. A inicialização pode criar índices e executar TTL, portanto depende de diagnóstico, backup e aprovação próprios.
+
+Referências: [deploys e commit específico](https://render.com/docs/deploys), [variáveis e Save only](https://render.com/docs/configure-environment-variables).
 
 ## Infraestrutura observada, somente leitura
 
@@ -32,7 +47,7 @@ Gerar JWT no ambiente seguro do responsável. Rotação invalida sessões, sem m
 
 ## Banco: bloqueio anterior à publicação
 
-`MONGO_URI` permanece mascarada; **nome exato e isolamento do banco remoto não foram confirmados**. Não houve conexão ao banco hospedado. O responsável deve identificar cluster e nome exato e confirmar que contém apenas a demonstração, sem dados empresariais.
+Na inspeção de 15/10, a URI Atlas não especificava banco; o código sem override utiliza o padrão `test`. O responsável confirmou no Atlas que `test` e suas coleções `users`, `companies`, `tokens` e `auditlogs` pertencem exclusivamente à demonstração, sem dados empresariais reais. Isso é confirmação do responsável, não diagnóstico automatizado. A correspondência exata do cluster e as permissões de uma credencial somente leitura ainda precisam ser verificadas; nenhum diagnóstico remoto foi executado. Essa investigação não faz parte da finalização do portfólio.
 
 Após essa confirmação, usar credencial somente leitura, sem divulgar URI. Configurar `MONGO_URI` com segurança no processo autorizado, sem mudar a configuração externa. No checkout revisado:
 
@@ -59,7 +74,7 @@ Seed exige sufixo `_demo` e banco vazio ou marcador conhecido. Não substituir c
 
 ## Sequência após aprovações específicas
 
-1. Revisar commits locais e autorizar push/preview. Executar CI Node 22/24 no novo HEAD; resultado de `42083d7` não certifica o HEAD novo.
+1. Revisar o diff e publicar apenas os commits de portfólio na branch existente, com preview autorizado. Executar CI Node 22/24 no novo HEAD; resultado de uma revisão anterior não certifica o novo commit.
 2. Confirmar isolamento/nome do banco, diagnóstico, backup, migração se necessária e autorização dos índices.
 3. Validar backend/frontend em cópia isolada, sem provedores externos. Preview não deve apontar inadvertidamente para dados empresariais.
 4. Aprovar correção JWT e configurações necessárias; escolher o commit a publicar. Merge e deploy são aprovações distintas do push do PR.

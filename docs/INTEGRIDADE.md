@@ -31,7 +31,7 @@ A gravação da auditoria é **best effort**, sem transação ou fila durável. 
 
 ## Demonstração compartilhada
 
-Use banco isolado, nome terminado em `_demo`, credenciais próprias e nenhuma informação empresarial. O seed só aceita banco vazio ou com marcador conhecido, não apaga registros nem redefine senhas. Bancos desconhecidos são recusados mesmo quando vazios.
+Use banco isolado, credenciais próprias e nenhuma informação empresarial. O seed local exige nome terminado em `_demo` e banco vazio ou com marcador conhecido; não apaga registros nem redefine senhas. A exigência de sufixo é uma proteção do seed, não uma regra de nome para a conexão normal ou para o diagnóstico de uma base existente autorizada.
 
 Identidades `isDemo`, com domínio reservado `@demo.local` ou com um dos três e-mails públicos documentados no README são protegidas. O administrador demo consulta usuários e auditoria, mas não cria, altera, exclui nem redefine senhas de usuários. O backend revalida a existência e o perfil do usuário em cada requisição. Empresas fictícias iniciais não são editáveis por contas demo. Criação de empresas, edição e geração compartilham uma cota de 30 escritas/hora por conta demo, independente do IP.
 
@@ -51,6 +51,6 @@ CPF/CNPJ são normalizados e validados por tipo, caracteres e comprimento, mante
 
 ## Licença e histórico
 
-A decisão de licença permanece pendente da confirmação dos direitos sobre o código. O metadado genérico ISC foi substituído por `UNLICENSED`; isso não concede uma licença de reutilização. A licença OFL das fontes é preservada.
+O autor confirmou que possui autorização para publicar e reutilizar o código. A licença a conceder a terceiros ainda não foi escolhida. O metadado `UNLICENSED` não concede uma licença permissiva; a licença OFL das fontes é preservada.
 
-O histórico anterior contém nomes e assets da identidade empresarial antiga. Não foi reescrito. A inspeção de cinco commits e padrões de credenciais não confirmou credenciais reais; isso não substitui revisão especializada de todo conteúdo binário e de segredos fora dos padrões. Não reutilize assets empresariais nem reescreva o histórico sem decisão explícita.
+O histórico anterior contém nomes e assets da identidade empresarial original, preservados com autorização do autor. Não há necessidade de reescrever o histórico ou remover referências pela origem. A inspeção histórica de cinco commits e padrões de credenciais não confirmou credenciais reais; isso não certifica todo o histórico ou conteúdo binário. Segredos privados continuam excluídos da autorização de publicação.

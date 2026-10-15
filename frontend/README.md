@@ -11,4 +11,8 @@ npm run dev
 
 Configure `VITE_API_URL=/api` no desenvolvimento. O proxy aponta para `http://127.0.0.1:3003`; `API_PROXY_TARGET` permite outro backend local. Em hospedagens separadas, informe a URL pública da API e configure CORS nela. O preview local usa a porta 4173 e o mesmo proxy, sem conflitar com a API.
 
+`VITE_DEMO_ACCOUNTS` controla somente as instruções do login. Use `local` para contas `@demo.local` criadas pelo seed ou `public` para as contas hospedadas documentadas no README. Sem valor ou com valor desconhecido, nenhuma credencial é sugerida. A configuração é pública e incorporada pelo Vite; não muda a API, o login real ou as permissões. `.env.example` contém `local` para a instalação local.
+
+Em previews sem API compatível, deixe o valor vazio. Mesmo com `public`, a interface avisa que o acesso depende da atualização do backend e que previews não têm funcionamento garantido. Não deduzimos o ambiente pelo hostname ou pelo modo de produção do Vite. Nenhuma variável externa precisa ser alterada para publicar o código com o comportamento seguro sem configuração.
+
 Consulte [README principal](../README.md), [integridade e operação](../docs/INTEGRIDADE.md) e [estado da publicação](../docs/PUBLICACAO.md). O build não comprova disponibilidade da API publicada.

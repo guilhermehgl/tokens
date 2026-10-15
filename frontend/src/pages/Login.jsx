@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import "./login.css"; // CSS específico para a tela de login
 import img from "../assets/img-login.png"
+import { demoAccounts } from "../utils/demoAccounts";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -17,6 +18,7 @@ export default function Login() {
   const { login, sessionMessage } = useContext(AuthContext);
 
   const API_URL = import.meta.env.VITE_API_URL || '/api';
+  const demoHelp = demoAccounts(import.meta.env.VITE_DEMO_ACCOUNTS);
 
   const handleLogin = async (e) => {
     e?.preventDefault();
@@ -104,7 +106,13 @@ export default function Login() {
           </button>
           {modalMessage && <p className="login-error" role="alert">{modalMessage}</p>}
         </form>
-        <details className="demo-help"><summary>Como experimentar a demonstração</summary><p>Use admin@demo.local, vendedor@demo.local ou verificador@demo.local.</p><p>Senha: <code>DemoTokens!2026</code></p><p>Gere um token como vendedor e valide como verificador. Use somente dados fictícios. Mensagens externas estão desabilitadas.</p></details>
+        <details className="demo-help">
+          <summary>Como experimentar a demonstração</summary>
+          <p>{demoHelp.label}</p>
+          {demoHelp.emails.length > 0 && <p>Use {demoHelp.emails.join(", ")}.</p>}
+          {demoHelp.password && <p>Senha: <code>{demoHelp.password}</code></p>}
+          <p>{demoHelp.guidance}</p>
+        </details>
       </div>
 
 
