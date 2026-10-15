@@ -42,6 +42,23 @@ Vercel cria previews da branch de melhorias; Render registrou Auto-Deploy para `
 - Backend: `MONGO_URI` do banco demonstrativo confirmado, `JWT_SECRET` aleatório com pelo menos 32 caracteres e `CORS_ORIGINS=https://tokens-theta-dun.vercel.app`. Adicionar origem de preview só com aprovação; sem wildcard.
 - `PORT` fornecida pela hospedagem ou padrão local. `TRUST_PROXY` desativado até determinar cadeia/IPs confiáveis; não definir `true` indiscriminadamente. `HTTPS_ENABLED` somente após confirmar HTTPS/proxy.
 - SMTP/Vonage não são necessários. Seus nomes existem no Render, mas os valores não foram revelados nem alterados; sua presença não deve habilitar envio na versão corrigida.
+- Novas regras demonstrativas: `DEMO_ENABLED=true`, `DEMO_DB_NAME=test` e `DEMO_DB_HOST=<host exato do cluster verificado>`, somente após aprovação. A URI Atlas sem caminho seleciona `test`; as configurações precisam corresponder à URI e ao banco conectado. Exige também marcador demonstrativo autorizado em `demo_environment`; sem ele, a ativação falha. Não deduzir isolamento pelo nome. Standalone não atende às transações; confirmar replica set/cluster e permissões antes da publicação. Ausência de ativação preserva o comportamento anterior de admin demo somente leitura, sem liberar CRUD aberto em outra base.
+
+## Backup e corte para as cotas
+
+Nenhum backup ou diagnóstico remoto foi executado nesta implementação. Antes de publicar:
+
+1. Conferir cluster, banco `test`, credencial somente leitura e regras de rede, sem imprimir URI. Executar o diagnóstico revisado com `INTEGRITY_DB_NAME=test`; registrar duplicidades, índices, datas de criação, capacidade e suporte a transações. Nunca iniciar a API como diagnóstico.
+2. Identificar o plano Atlas e backups já disponíveis. Em M0, preparar `mongodump`; em planos com snapshots, selecionar uma estratégia consistente compatível. Ferramentas locais existem, mas isso não comprova backup ou restauração. Obter autorização para cópia e local protegido fora do Git, sem senha na linha de comando.
+3. Após autorização, impedir escritores antigos durante o corte. Realizar backup consistente de dados/metadados e validar restauração em cópia isolada, inicialmente sem restaurar índices TTL. Registrar verificação de contagens e capacidade de recuperar os dados. O plano Free do Render não oferece o modo Maintenance pago; não presumir essa opção disponível.
+4. Revisar duplicidades e formatos, sem exclusão ou normalização automática. Coleções acima de 50 permanecem; apenas novas criações são bloqueadas. Registros antigos sem `demoManaged` não serão liberados para edição automaticamente. Qualquer classificação/migração requer lista e aprovação próprias.
+5. Revisar emissões anteriores no dia de São Paulo. A primeira gravação diária considera tokens existentes; o contador fica independente do TTL depois disso. Se houver exclusões anteriores ou datas não confiáveis, preparar bootstrap conservador aprovado ou iniciar no próximo dia com escritores antigos bloqueados. Não inicializar uma contagem fictícia em zero.
+6. Conferir o marcador demonstrativo pelo diagnóstico. Se ausente, apresentar e obter autorização para inserir somente `_id=portal-tokens-demo-v1`, `purpose=public-demo` em `demo_environment`, após backup, sem seed nem mudanças nas contas. Autorizar separadamente índices existentes esperados e efeito TTL. A nova coleção `demoquotas` usa `_id` padrão, sem índice personalizado; primeira operação cria mutex/contador dentro da transação. Incluir essas escritas na aprovação do ambiente demonstrativo. A inicialização cria os índices únicos/TTL anteriores; isso continua exigindo aprovação antes do deploy.
+7. Só depois aprovar JWT, configuração demonstrativa, runtime Node validado e deploy de um SHA identificado. Usar `Save only` para preparar variáveis sem publicar por acidente; publicar o SHA aprovado explicitamente. A entrada de um novo segredo deve ocorrer no ambiente seguro do responsável, sem chat, logs ou Git.
+
+Rollback não deve apontar para backend que ignore cotas ou habilite mensagens. Preparar versão compatível que preserve os contadores, bloqueie escritas e mantenha consultas, ou manter serviço indisponível até correção autorizada. Restaurar dados/índices e reativar auto-deploy são operações separadas, nunca compensações automáticas.
+
+Referências: [backups Atlas](https://www.mongodb.com/docs/atlas/backup-restore-cluster/), [transações](https://www.mongodb.com/docs/drivers/node/current/crud/transactions/).
 
 Gerar JWT no ambiente seguro do responsável. Rotação invalida sessões, sem mudar senhas. Não publicar segredo em docs, PR ou logs. Corrigir `JWT_SECRET` é alteração externa sujeita à autorização.
 

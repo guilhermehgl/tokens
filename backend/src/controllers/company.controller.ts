@@ -4,9 +4,12 @@ import { companyInput } from "../utils/companyValidation";
 import { persistenceError, validId } from "../utils/validation";
 import { logAction } from "../utils/audit";
 import { isDemoCompany } from "../demo/accounts";
+import { demoEnabled } from "../demo/environment";
+import { demoWrite, demoError } from "../demo/quotas";
 export const createCompany = async (req: Request, res: Response) => {
   let data;
   try {
+    if (demoEnabled() && ["demoManaged", "isDemo", "active"].some(key => key in req.body)) return res.status(400).json({ message: "Campos de proteção não podem ser definidos pelo cliente." });
     data = companyInput(req.body);
   } catch (error) {
     return res.status(400).json({ message: (error as Error).message });
@@ -14,7 +17,10 @@ export const createCompany = async (req: Request, res: Response) => {
   try {
     if (await Company.findOne({ documento: data.documento }))
       return res.status(409).json({ message: "Empresa já cadastrada." });
-    const company = await Company.create(data);
+    const demo = demoEnabled();
+    if (demo && isDemoCompany({ documento: data.documento })) return res.status(400).json({ message: "Documento reservado para empresa inicial." });
+    const record = { ...data, ...(demo ? { demoManaged: true } : {}) };
+    const company = await demoWrite("companies", async session => session ? (await Company.create([record], { session }))[0] : await Company.create(record));
     if (req.userId)
       await logAction("CREATE_COMPANY", req.userId, "Company", {
         companyId: company._id,
@@ -25,6 +31,7 @@ export const createCompany = async (req: Request, res: Response) => {
       });
     return res.status(201).json({ success: true, company });
   } catch (error) {
+    if (demoError(res, error)) return;
     return persistenceError(res, error);
   }
 };
@@ -38,6 +45,7 @@ export const listCompanies = async (_req: Request, res: Response) => {
           ? company.toObject()
           : company),
         isDemo: isDemoCompany(company),
+        canEdit: !isDemoCompany(company) && (!demoEnabled() || company.demoManaged === true),
       })),
     });
   } catch (error) {
@@ -49,6 +57,7 @@ export const updateCompany = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "ID inválido." });
   let data;
   try {
+    if (demoEnabled() && ["demoManaged", "isDemo", "active"].some(key => key in req.body)) return res.status(400).json({ message: "Campos de proteção não podem ser alterados." });
     data = companyInput(req.body, true);
   } catch (error) {
     return res.status(400).json({ message: (error as Error).message });
@@ -57,7 +66,7 @@ export const updateCompany = async (req: Request, res: Response) => {
     const company = await Company.findById(req.params.id);
     if (!company)
       return res.status(404).json({ message: "Empresa não encontrada." });
-    if (req.userIsDemo && isDemoCompany(company))
+    if (req.userIsDemo && (isDemoCompany(company) || (demoEnabled() && !company.demoManaged)))
       return res
         .status(403)
         .json({ message: "Os dados fictícios iniciais são protegidos." });
@@ -68,6 +77,7 @@ export const updateCompany = async (req: Request, res: Response) => {
         .status(400)
         .json({ message: "Documento incompatível com o tipo." });
     data.documento = documento;
+    if (demoEnabled() && isDemoCompany({ documento })) return res.status(400).json({ message: "Documento reservado para empresa inicial." });
     data.tipoDocumento = tipo;
     const updated = await Company.findByIdAndUpdate(req.params.id, data, {
       new: true,

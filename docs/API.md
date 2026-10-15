@@ -37,3 +37,27 @@ Consumo atômico exige hash correspondente, `used=false` e validade futura. HTTP
 ## Integrações preservadas
 
 `deliverToken`, SMTP/Nodemailer/MJML e Vonage permanecem implementados, sem ligação com as rotas demonstrativas de geração. Os serviços têm testes com mocks/transportes locais. O teste HTTP bloqueia conexões externas e criação de transporte SMTP durante geração, inclusive com canais forçados.
+
+## Administração demonstrativa e cotas
+
+Com `DEMO_ENABLED=true` e identidade de banco/host confirmada no servidor:
+
+- `POST /api/auth/create`: admin cria vendedor/verificador com `{nome,email,password,role}`. E-mail deve terminar em `.test` ou `.example`; flags internas são recusadas. Resposta 201 mantém o contrato existente. O usuário recebe `demoManaged=true` no servidor.
+- `PUT /api/users/:id`: admin altera `{name,email,role,password?}` somente de usuário criado na demonstração. Não permite administrador, e-mail reservado ou flags de proteção/atividade.
+- `PUT /api/users/:id/reset-password`: `{newPassword}`; mesmas restrições de alvo.
+- `DELETE /api/users/:id`: exclui somente usuário permitido, invalidando suas próximas requisições. Preserva tokens e auditoria.
+- `GET /api/users`: mantém o array e acrescenta `canManage` para apresentação das ações. Campos de senha/recuperação não são retornados.
+- `GET /api/companies`: acrescenta `canEdit`; criação/edição mantêm validações. Não há exclusão de empresa.
+- `GET /api/demo/limits`: qualquer sessão autenticada consulta máximos, utilizados, restantes e próxima liberação. Sem modo explicitamente ativado retorna `{enabled:false}`. Não cria contadores.
+
+Todas as contas conectadas ao banco demo, inclusive legadas e criadas, compartilham 50 usuários ativos, 50 empresas ativas e 10 emissões por dia de São Paulo. Capacidade esgotada não impede login, consulta, edição autorizada, exclusão permitida ou verificação de códigos existentes.
+
+Capacidade de usuários/empresas: HTTP 409, códigos `demo_users_limit` e `demo_companies_limit`. Emissões: HTTP 429, código `demo_tokens_daily_limit`, `Retry-After` e `limit.nextReset`. Cada resposta inclui `message` e `limit:{type,maximum,used,remaining,nextReset?}`. Configuração de ambiente divergente retorna 503 `demo_environment_unavailable`; falha na consulta das cotas retorna 503 `demo_limits_unavailable`.
+
+Exemplo apenas de formato (valores reais vêm do banco):
+
+```json
+{"enabled":true,"users":{"maximum":50,"used":3,"remaining":47},"companies":{"maximum":50,"used":2,"remaining":48},"tokens":{"maximum":10,"used":0,"remaining":10,"nextReset":"2026-10-16T03:00:00.000Z","timeZone":"America/Sao_Paulo"}}
+```
+
+Auditoria acrescenta `CREATE_USER`, `EDIT_USER`, `RESET_USER_PASSWORD` e `DELETE_USER`, com ID/nome/perfil do alvo e sem senha. Sua gravação continua best effort; o consumo de cota e o registro principal são transacionais, a auditoria não é.

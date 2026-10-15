@@ -7,8 +7,11 @@ const limiter = createMemoryLimiter(
   3600,
   (req) => req.userId || req.ip || "unknown",
 );
+const adminOperations = createMemoryLimiter(10, 60, 60);
 export function demoWrites(req: Request, res: Response, next: NextFunction) {
-  if (req.userIsDemo && !["GET", "HEAD", "OPTIONS"].includes(req.method))
+  if (req.userIsDemo && !["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+    if (["PUT", "DELETE"].includes(req.method)) return adminOperations(req, res, () => limiter(req, res, next));
     return limiter(req, res, next);
+  }
   next();
 }

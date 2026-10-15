@@ -22,7 +22,9 @@ async function main() {
     result.invalidTokenHashes ||
     result.nonCanonicalDocuments ||
     result.normalizedUserEmailDuplicates.groups ||
-    result.indexes.some(index => index.status !== "ready")
+    result.indexes.some(index => index.status !== "ready") ||
+    result.demoCapacity.invalidTokenCreationDates || result.demoCapacity.invalidDailyCounter ||
+    (process.env.DEMO_ENABLED === "true" && (!result.database.transactionsSupported || !result.demoCapacity.demoMarkerPresent))
   )
     process.exitCode = 1;
 }

@@ -1,5 +1,19 @@
 # Estado e histórico da publicação
 
+## CRUD e cotas globais — preparação de 15/10/2026
+
+Esta revisão parte de `acad74e` na mesma branch e PR #1. Implementa CRUD de usuários demonstrativos marcados pelo servidor, proteção das seis identidades iniciais, edição apenas de empresas permitidas e cotas globais persistentes de 50 usuários ativos, 50 empresas ativas e 10 emissões por dia de São Paulo. O ambiente exige identidade de banco/host, marcador demonstrativo confirmado e suporte a transações. Não foi criado marcador remoto.
+
+Validação local: 70 testes backend (incluindo transações reais em replica set temporário) e 16 frontend aprovados; TypeScript e build Vite aprovados; auditorias de dependências de produção sem vulnerabilidades apontadas. Os 66 testes anteriores foram preservados. Concorrência, rollback, falha secundária de auditoria, TTL sem reposição de cota, reinício e mudança de dia foram testados em banco temporário.
+
+Navegador local: três perfis, criação e edição de usuário, proteção visual das contas fixas, consulta e atualização da auditoria, edição de empresa permitida, cadastro de empresa, erro de NF, geração na tela, confirmação de cópia, consumo e recusa de reutilização, consultas e viewport 390 × 844 do verificador. Redefinição de senha e exclusão foram comprovadas pelos testes HTTP automatizados; não foram submetidas pelo navegador. Corrigida atualização das listas do verificador após consumo. A fixture bloqueia provedores externos.
+
+Render: a leitura do painel nesta etapa ainda mostrou último sucesso `96548fe` e tentativa `eec58ac` falha, branch `master`. Detalhes de runtime/CORS e produção Vercel da inspeção anterior permanecem históricos até nova confirmação. A versão pública não foi certificada pelo teste local.
+
+O responsável confirmou que `test` contém exclusivamente dados demonstrativos e informou que ainda não existe credencial somente leitura. Portanto, diagnóstico remoto, correspondência exata do cluster, duplicidades, formatos, índices e compatibilidade transacional permanecem pendentes. Não utilizar a credencial de escrita da aplicação para esse diagnóstico. Não houve seed, inicialização do backend contra Atlas, mudanças de variáveis, índices, deploy backend ou merge nesta etapa.
+
+Publicação desta revisão, CI Node 22/24 e preview do novo SHA devem ser confirmados após push; os resultados anteriores abaixo não certificam esta revisão. O [plano de deploy](DEPLOY.md) exige backup com restauração testada, avaliação do TTL e dos dados legados, controle dos escritores antigos e aprovações específicas antes de qualquer alteração externa. Demonstração pública e integração na master continuam pendentes.
+
 ## Atualização de 15/10/2026
 
 O [PR #1](https://github.com/guilhermehgl/tokens/pull/1) foi confirmado aberto, com sete commits e HEAD `eaf1131862b2058669dabf2e11d430d2479e1af2`, antes da finalização de apresentação. A `master` permanece em `eec58ac`. O CI de `eaf1131` passou em Node 22/24 nas execuções de [PR](https://github.com/guilhermehgl/tokens/actions/runs/38748769134) e [push](https://github.com/guilhermehgl/tokens/actions/runs/38748762900): 51 testes backend e 12 frontend. Esses resultados não certificam commits posteriores.

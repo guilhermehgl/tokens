@@ -8,6 +8,10 @@ export function auditSummary(log) {
   const token = ""; // Códigos não são exibidos em auditoria.
   const withNf = value => [value, nf && `NF ${nf}`].filter(Boolean).join(" · ");
   switch (log.action) {
+    case "CREATE_USER":
+    case "EDIT_USER":
+    case "RESET_USER_PASSWORD":
+    case "DELETE_USER": return [text(info.name), text(info.role)].filter(Boolean).join(" · ") || text(info.userId) || "Usuário demonstrativo";
     case "CREATE_COMPANY":
     case "EDIT_COMPANY": return company || text(info.documento) || "Empresa não informada";
     case "GENERATE_TOKEN": return withNf(company) || "Token gerado";
@@ -40,7 +44,7 @@ const labels = {
   deliveryChannel: "Canal de envio", deliveryDestination: "Destinatário", deliveryMessageId: "Identificador do envio", deliveryStatus: "Status do envio",
   role: "Perfil", ip: "Endereço IP", createdAt: "Data de criação", updatedAt: "Última atualização",
   targetType: "Tipo de entidade", action: "Código da ação", performedBy: "Dados do usuário",
-  nome: "Nome", email: "E-mail", message: "Mensagem", description: "Descrição",
+  nome: "Nome", name: "Nome", userId: "Identificador do usuário", email: "E-mail", message: "Mensagem", description: "Descrição",
 };
 
 export function auditFieldLabel(key) {

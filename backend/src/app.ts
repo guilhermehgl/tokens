@@ -12,6 +12,8 @@ import companyRoutes from "./routes/company.routes";
 import tokenRoutes from "./routes/token.routes";
 import userRoutes from "./routes/user.routes";
 import auditRoutes from "./routes/audit.routes";
+import demoRoutes from "./routes/demo.routes";
+import { demoEnabled, confirmDemoEnvironment } from "./demo/environment";
 
 // Middleware de rate limit
 import { rateLimitGeneral } from "./middleware/rateLimit";
@@ -61,6 +63,7 @@ app.use("/api/companies", companyRoutes);
 app.use("/api/tokens", tokenRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/demo", demoRoutes);
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
 app.use((error: { type?: string; status?: number }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   // Não expor stack, conteúdo da requisição ou detalhes dos provedores.
@@ -77,6 +80,11 @@ if (require.main === module) {
   try { assertRuntime(); } catch (error) { console.error((error as Error).message); process.exit(1); }
   connectDB()
   .then(async () => {
+    await confirmDemoEnvironment();
+    if (demoEnabled()) {
+      const topology = await (await import("mongoose")).default.connection.db!.admin().command({ hello: 1 });
+      if (!topology.setName && topology.msg !== "isdbgrid") throw new Error("Demonstração exige transações MongoDB.");
+    }
     const { default: Token } = await import("./models/Token");
     const { Company } = await import("./models/Company");
     const { default: User } = await import("./models/User");

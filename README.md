@@ -12,11 +12,11 @@ A aplicação organiza o trabalho de vendedores, verificadores e administradores
 
 | Perfil | O que permite fazer |
 | --- | --- |
-| Administrador | Consultar usuários, empresas e auditoria; gerenciar usuários quando autorizado. Contas demonstrativas possuem acesso de consulta aos usuários. |
+| Administrador | Consultar usuários, empresas, auditoria e cotas. Criar, editar, redefinir senha e excluir usuários criados na demonstração; editar empresas permitidas. As contas públicas e os registros iniciais são protegidos. |
 | Vendedor | Cadastrar empresas e gerar códigos de retirada vinculados a notas fiscais. Visualizar e copiar o token gerado. |
 | Verificador | Validar códigos e confirmar retiradas; consultar pendências e tokens utilizados no dia. |
 
-O fluxo central é **cadastrar empresa → gerar token para uma NF → copiar código → verificar retirada**. Um código vencido ou já utilizado não libera uma segunda retirada. As operações relevantes geram registros de auditoria; os dados de entrada são validados pela API.
+O fluxo central é **cadastrar empresa → gerar token para uma NF → copiar código → verificar retirada**. O administrador pode criar vendedores e verificadores com e-mails fictícios terminados em `.test` ou `.example`, sem criar outros administradores. Um código vencido ou já utilizado não libera uma segunda retirada. As operações relevantes geram registros de auditoria; os dados de entrada são validados pela API.
 
 <details>
 <summary>Mais telas da aplicação</summary>
@@ -29,7 +29,7 @@ O fluxo central é **cadastrar empresa → gerar token para uma NF → copiar c�
 | --- | --- |
 | ![Painel do verificador com consulta de retiradas](docs/images/verification.jpg) | ![Consulta administrativa dos registros de auditoria](docs/images/audit.jpg) |
 
-[Ver o modal em celular](docs/images/mobile.jpg). As capturas utilizam banco temporário e dados fictícios. A captura de login registra a versão anterior às orientações de acesso por ambiente.
+[Ver o modal em celular](docs/images/mobile.jpg). As capturas utilizam banco temporário e dados fictícios. A captura de login registra a versão anterior às orientações de acesso por ambiente e apresentação de auditoria de usuários.
 
 </details>
 
@@ -60,11 +60,13 @@ As rotas verificam sessão, perfil e limites de requisições. Controllers valid
 - **Códigos e armazenamento:** seis caracteres, pelo menos um número e geração com `crypto.randomInt`. Somente o SHA-256 é persistido. O código aparece no resultado autorizado, sem ser salvo em URL ou localStorage. Colisões são tratadas com índice único e até cinco tentativas.
 - **Retirada única:** `findOneAndUpdate` condiciona o consumo ao hash, ao estado não utilizado e à validade futura. Entre retiradas concorrentes com o mesmo código, apenas uma vence.
 - **Expiração:** validade de 30 dias verificada na operação; o índice TTL remove registros vencidos de forma assíncrona. A unicidade cobre os registros ainda retidos.
-- **Autenticação e autorização:** JWT, senhas com bcrypt e permissões verificadas no backend. A existência e o perfil atual do usuário são revalidados. Contas compartilhadas de demonstração possuem restrições próprias.
+- **Autenticação e autorização:** JWT, senhas com bcrypt e permissões verificadas no backend. A existência, atividade e o perfil atual do usuário são revalidados. As três contas públicas e as contas iniciais do seed são protegidas; usuários criados na demonstração são identificados pelo servidor e podem ser gerenciados.
 - **Auditoria:** registros sanitizados na escrita e na leitura. A gravação é best effort: uma falha secundária não transforma uma retirada efetivada em falso erro, mas pode deixar o histórico incompleto.
 - **Proteções HTTP e validação:** limites por IP e conta demonstrativa, CORS explícito, Helmet, JSON limitado e validação de cadastros. CPF/CNPJ são verificados por tipo e formato, sem consulta oficial ou dígitos verificadores.
 
-Os limites conhecidos — incluindo JWT em localStorage, cotas por processo, auditoria não transacional e demonstração compartilhada — estão em [Integridade e segurança](docs/INTEGRIDADE.md).
+As cotas globais são persistentes no MongoDB: até **50 usuários ativos**, **50 empresas ativas** e **10 tokens por dia**, compartilhados por todos os visitantes. O dia muda à meia-noite de **America/Sao_Paulo**. Transações impedem ultrapassar a capacidade com requisições concorrentes; reiniciar o servidor ou mudar de conta/IP não libera a cota. Consultas, edições permitidas e verificação continuam disponíveis quando a capacidade acaba. As cotas exibidas nos painéis vêm da API.
+
+Os limites conhecidos — incluindo JWT em localStorage, limitadores auxiliares por processo, auditoria não transacional e demonstração compartilhada — estão em [Integridade e segurança](docs/INTEGRIDADE.md).
 
 ## Demonstração e acessos
 
@@ -87,7 +89,7 @@ Para experimentar a versão corrigida: entre como vendedor, escolha uma empresa 
 
 ## Executar localmente
 
-Requisitos: Node.js 24.15+ na linha 24 ou 22.22.2+ na linha 22, npm e MongoDB local e isolado. O CI cobre Node 22 e 24. Não utilize banco empresarial nos exemplos ou no seed.
+Requisitos: Node.js 24.15+ na linha 24 ou 22.22.2+ na linha 22, npm e MongoDB local e isolado **com replica set**, necessário para as transações demonstrativas. O CI cobre Node 22 e 24. Não utilize banco empresarial nos exemplos ou no seed.
 
 ```powershell
 npm run setup
@@ -96,7 +98,16 @@ Copy-Item frontend/.env.example frontend/.env
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Se os arquivos `.env` já existirem, preserve-os. Configure no backend `MONGO_URI=mongodb://127.0.0.1:27017/portal_tokens_demo` e `JWT_SECRET` com o valor aleatório gerado (mínimo 32 caracteres). No frontend, use `VITE_API_URL=/api` e `VITE_DEMO_ACCOUNTS=local`. Não são necessárias credenciais SMTP/Vonage.
+Se os arquivos `.env` já existirem, preserve-os. Configure no backend `MONGO_URI=mongodb://127.0.0.1:27017/portal_tokens_demo` e `JWT_SECRET` com o valor aleatório gerado (mínimo 32 caracteres). Para ativar as cotas e o CRUD demo, mantenha `DEMO_ENABLED=true`, `DEMO_DB_NAME=portal_tokens_demo` e `DEMO_DB_HOST=127.0.0.1` do exemplo, após conferir o banco isolado. O seed local cria o marcador demonstrativo exigido na inicialização; ele não deve ser criado automaticamente em uma base remota. No frontend, use `VITE_API_URL=/api` e `VITE_DEMO_ACCOUNTS=local`. Não são necessárias credenciais SMTP/Vonage.
+
+Prepare um replica set local antes do seed. Exemplo para uma instalação local do MongoDB (terminal dedicado; diretório de dados exclusivo da demonstração):
+
+```powershell
+New-Item -ItemType Directory -Force .local-mongo-demo
+mongod --replSet portalDemo --dbpath .local-mongo-demo --bind_ip 127.0.0.1 --port 27017
+```
+
+Em outro terminal, inicialize uma única vez com `mongosh --host 127.0.0.1 --eval "rs.initiate()"`. Se já usa um replica set local, preserve-o e confira a URI. Nunca execute esses comandos no Atlas.
 
 ```powershell
 npm --prefix backend run seed
@@ -119,7 +130,7 @@ npm --prefix backend audit
 npm --prefix frontend audit
 ```
 
-O teste backend inclui a compilação TypeScript. Os testes de integração HTTP usam MongoDB temporário e cobrem autenticação, autorização, proteção das contas demo, colisões, consumo concorrente, expiração, validação e auditoria. SMTP/Vonage usam mocks ou transporte MIME local, sem envio real. A primeira execução pode baixar o binário MongoDB do fornecedor.
+O teste backend inclui a compilação TypeScript. Os testes de integração HTTP usam MongoDB temporário (replica set nos testes de cotas) e cobrem autenticação, autorização, proteção das contas demo, colisões, consumo concorrente, expiração, validação e auditoria. SMTP/Vonage usam mocks ou transporte MIME local, sem envio real. A primeira execução pode baixar o binário MongoDB do fornecedor.
 
 Os testes frontend verificam utilitários de sessão, cópia, telefone, entrega na tela e orientações de acesso por ambiente. Não substituem validação visual e de interação no navegador.
 

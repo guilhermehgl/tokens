@@ -17,6 +17,7 @@ export default function VerificadorDashboard() {
   const [loadingTokens, setLoadingTokens] = useState(true);
   const [loadingUnverified, setLoadingUnverified] = useState(true);
   const [activeTab, setActiveTab] = useState("verify"); // verify | unverified | verifiedToday
+  const [listsRevision, setListsRevision] = useState(0);
 
   const { user, token, loading: authLoading, logout } = useContext(AuthContext);
   const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -57,7 +58,7 @@ export default function VerificadorDashboard() {
     };
 
     fetchVerifiedTokens();
-  }, [isAuthorized, API_URL, token]);
+  }, [isAuthorized, API_URL, token, listsRevision]);
 
   // Buscar tokens ainda não verificados
   useEffect(() => {
@@ -85,7 +86,7 @@ export default function VerificadorDashboard() {
     };
 
     fetchUnverifiedTokens();
-  }, [isAuthorized, API_URL, token]);
+  }, [isAuthorized, API_URL, token, listsRevision]);
 
   const normalizeSearch = value => String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
   const matchesSearch = (item, search) => {
@@ -105,7 +106,7 @@ export default function VerificadorDashboard() {
             <Button variant="ghost" onClick={() => setModalConfirm({ message: "Tem certeza que deseja sair?", onConfirm: logout, onCancel: () => {} })}><FiLogOut size={16} aria-hidden="true" />Sair</Button>
           </HeaderActions>
           <PageHeader title="Painel do Verificador" />
-          <AdminTabs view={activeTab} onChange={setActiveTab} label="Navegação do verificador" tabs={[["verify", "Verificar token"], ["unverified", "Tokens pendentes"], ["verifiedToday", "Verificados hoje"]]} />
+          <AdminTabs view={activeTab} onChange={view => { setActiveTab(view); setListsRevision(value => value + 1); }} label="Navegação do verificador" tabs={[["verify", "Verificar token"], ["unverified", "Tokens pendentes"], ["verifiedToday", "Verificados hoje"]]} />
           {activeTab === "verify" && (
             <Card title="Verificar token">
               <form className="verifier-form" noValidate aria-busy={verifying} onSubmit={async (e) => {
@@ -136,6 +137,7 @@ export default function VerificadorDashboard() {
                       ]);
                     }
                     setTokenInput("");
+                    setListsRevision(value => value + 1);
                   } catch (err) {
                     const code = err.response?.data?.code;
                     const titles = { expired_token: "Token vencido", used_token: "Token já utilizado", invalid_token: "Token inválido" };

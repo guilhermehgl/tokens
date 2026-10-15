@@ -6,6 +6,8 @@ export interface IUser extends Document {
   password: string;
   role: "admin" | "vendedor" | "verificador";
   isDemo?: boolean;
+  demoManaged?: boolean;
+  active?: boolean;
   recoveryUUID?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -19,6 +21,8 @@ const userSchema = new Schema<IUser>(
     role: { type: String, enum: ["admin", "vendedor", "verificador"], required: true },
     recoveryUUID: { type: String, default: null },
     isDemo: { type: Boolean, default: false },
+    demoManaged: { type: Boolean, default: false, immutable: true },
+    active: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

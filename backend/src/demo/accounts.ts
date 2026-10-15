@@ -7,6 +7,10 @@ export const demoAccounts = [
 export const demoPassword = "DemoTokens!2026";
 // Contas públicas já existentes na hospedagem, além das contas do seed local.
 export const publishedDemoEmails = ["admin@admin.com", "vendedor@vendedor.com", "verificador@verificador.com"];
+export const isProtectedDemoAccount = (user: { email?: string }) => {
+  const email = user.email?.trim().toLowerCase();
+  return Boolean(email && (publishedDemoEmails.includes(email) || demoAccounts.some(account => account.email === email)));
+};
 export const isDemoIdentity = (user: { email?: string; isDemo?: boolean }) => {
   const email = user.email?.trim().toLowerCase();
   return Boolean(user.isDemo || email?.endsWith("@demo.local") || (email && publishedDemoEmails.includes(email)));

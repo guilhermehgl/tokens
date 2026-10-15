@@ -1,4 +1,5 @@
 import Token from "../models/Token";
+import { ClientSession } from "mongoose";
 import { generateTokenPlain, hashToken } from "../utils/tokenUtils";
 export class TokenCollisionError extends Error {}
 export const MAX_TOKEN_ATTEMPTS = 5;
@@ -9,14 +10,16 @@ export async function createUniqueToken(data: {
   nfNumber: string;
   createdBy: string;
   expiresAt: Date;
-}) {
+  createdAt?: Date;
+}, session?: ClientSession) {
   for (let attempt = 0; attempt < MAX_TOKEN_ATTEMPTS; attempt++) {
     const plainToken = generateTokenPlain(6);
     try {
-      const tokenDoc = await Token.create({
+      const record = {
         ...data,
         tokenHash: hashToken(plainToken),
-      });
+      };
+      const tokenDoc = session ? (await Token.create([record], { session }))[0] : await Token.create(record);
       return { plainToken, tokenDoc };
     } catch (error) {
       const failure = error as {
@@ -24,6 +27,7 @@ export async function createUniqueToken(data: {
         keyPattern?: Record<string, unknown>;
       };
       if (failure.code !== 11000 || !failure.keyPattern?.tokenHash) throw error;
+      if (session) throw error; // A colisão aborta a transação; repetir fora dela.
     }
   }
   throw new TokenCollisionError(

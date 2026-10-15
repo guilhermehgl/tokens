@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from "express";
+import { demoEnabled } from "../demo/environment";
 export function blockDemoUserMutation(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
-  if (req.userIsDemo)
+  if (req.userIsDemo && !demoEnabled())
     return res
       .status(403)
       .json({

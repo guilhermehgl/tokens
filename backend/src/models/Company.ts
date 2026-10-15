@@ -9,6 +9,8 @@ export interface ICompany {
   tipoDocumento: "CPF" | "CNPJ";
   emailReferencia: string;
   telefone?: string; // Registros antigos podem não ter telefone.
+  demoManaged?: boolean;
+  active?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +19,8 @@ export interface ICompany {
 const CompanySchema = new Schema<ICompany>(
   {
     razaoSocial: { type: String, required: true, trim: true, minlength: 2, maxlength: 160 },
+    demoManaged: { type: Boolean, default: false, immutable: true },
+    active: { type: Boolean, default: true },
     documento: { type: String, required: true, unique: true, match: /^\d{11}$|^\d{14}$/ }, // CPF/CNPJ normalizado
     tipoDocumento: {
       type: String,

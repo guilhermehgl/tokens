@@ -6,6 +6,7 @@ import { hashToken } from "../utils/tokenUtils";
 import { sendEmail, validateEmailConfiguration } from "../utils/email";
 import { logAction } from "../utils/audit";
 import { createUniqueToken, TokenCollisionError } from "../services/token.service";
+import { demoWrite, demoError } from "../demo/quotas";
 import { validId } from "../utils/validation";
 import mjml2html from "mjml";
 import { normalizeWhatsappPhone, validateWhatsappConfiguration, sendWhatsappText, whatsappTokenMessage } from "../services/whatsapp.service";
@@ -83,13 +84,13 @@ export const generateToken = async (req: AuthRequest, res: Response) => {
     if (!company) return res.status(404).json({ message: "Empresa não encontrada" });
 
     const expiresAt = new Date(Date.now() + 30 * 86400000);
-    const { plainToken, tokenDoc } = await createUniqueToken({ companyId, companyName: company.razaoSocial, nfNumber, createdBy: req.userId, expiresAt });
+    const { plainToken, tokenDoc } = await demoWrite("tokens", (session, issuedAt) => createUniqueToken({ companyId, companyName: company.razaoSocial, nfNumber, createdBy: req.userId!, expiresAt, ...(issuedAt ? { createdAt: issuedAt } : {}) }, session));
     tokenCreated = true;
     await logAction("GENERATE_TOKEN", req.userId, "Token", { companyId, companyName: company.razaoSocial, nfNumber, expiresAt, deliveryChannel: "screen", role: req.userRole });
     res.setHeader("Cache-Control", "no-store");
     return res.json({ success: true, token: plainToken, tokenId: tokenDoc._id, expiresAt, deliveryChannel: "screen", message: "Token gerado. Copie o código exibido na tela." });
   } catch (error) {
-
+    if (demoError(res, error)) return;
     console.error("Falha ao gerar token.", { tokenCreated });
     res.status(error instanceof TokenCollisionError ? 503 : 500).json({ message: "Não foi possível gerar o token. Tente novamente mais tarde.", tokenCreated });
   }
