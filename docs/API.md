@@ -1,6 +1,6 @@
 # Contrato demonstrativo de tokens
 
-Base local `/api`; o frontend hospedado aponta para `https://tokens-xfrp.onrender.com/api`. O contrato abaixo pertence à branch corrigida, ainda pendente de publicação autorizada. O backend antigo hospedado é incompatível.
+Base local `/api`; o frontend hospedado aponta para `https://tokens-xfrp.onrender.com/api`. O contrato abaixo está publicado na demonstração em `9360622`, integrado à master pelo merge `8cadd15`. Estado confirmado em 16/10/2026; veja [Publicação](PUBLICACAO.md).
 
 ## Geração
 

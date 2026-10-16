@@ -1,5 +1,21 @@
 # Estado e histórico da publicação
 
+## Estado atual — 16/10/2026
+
+A [demonstração oficial](https://tokens-theta-dun.vercel.app/) está publicada: frontend Vercel e backend Render em `93606221e8afc6a2ce6b08541065986026770222`. O [PR #1](https://github.com/guilhermehgl/tokens/pull/1) foi integrado à `master` em `8cadd15b98b09a3e0771db2057acb9ab9af3cdf4`, com a mesma árvore de arquivos. O [CI do merge](https://github.com/guilhermehgl/tokens/actions/runs/38955282059) passou em Node 22 e 24 (70 testes backend e 16 frontend).
+
+A publicação incluiu o marcador demonstrativo e os índices únicos de `tokens.tokenHash` e `companies.documento`; o índice único de e-mail e o TTL de `tokens.expiresAt` foram preservados. O diagnóstico somente leitura confirmou compatibilidade dos formatos consultados, ausência de duplicidades e suporte a transações. O responsável confirmou dados exclusivamente fictícios em `test` e dispensou expressamente o backup. Não houve seed remoto nem substituição das três contas públicas.
+
+Na validação da publicação, passaram login dos três perfis, criação/edição/redefinição de senha/exclusão de usuário demonstrativo permitido, cadastro/edição de empresa fictícia, consulta de auditoria, geração/cópia na tela, consumo único, recusa de reutilização e atualização das consultas. Os serviços SMTP/Vonage estão preservados, sem chamada no fluxo de geração. Isso não certifica entrega externa em produção.
+
+Após o merge e novamente nesta revisão documental, os três logins e `GET /api/demo/limits` responderam 200, com ambiente demonstrativo ativo e cotas de 50 usuários, 50 empresas e 10 tokens/dia de São Paulo. O endereço oficial também respondeu 200. Esta revisão não criou usuários, empresas ou tokens, não alterou registros e não realizou deploy ou mudanças de infraestrutura. A instância gratuita pode demorar ao despertar; disponibilidade futura não é garantida por essa verificação.
+
+Os deploys automáticos da `master` foram controlados antes do merge: Render com Auto-Deploy desativado e Vercel com bloqueio de build automático dessa branch. O merge não disparou outra publicação; o SHA publicado permanece `9360622`, equivalente ao conteúdo integrado. Novos PRs podem gerar previews pela integração existente; preview não comprova disponibilidade da API nem altera a produção por si só.
+
+## Histórico de preparação — 14 e 15/10/2026
+
+**Todos os registros abaixo descrevem o estado na data da investigação.** Menções a PR aberto, backend antigo, JWT curto, índices ausentes, diagnóstico ou publicação pendentes foram superadas pela publicação de 16/10 descrita acima. São preservadas como evidência histórica, não como bloqueios atuais.
+
 ## CRUD e cotas globais — preparação de 15/10/2026
 
 Esta revisão parte de `acad74e` na mesma branch e PR #1. Implementa CRUD de usuários demonstrativos marcados pelo servidor, proteção das seis identidades iniciais, edição apenas de empresas permitidas e cotas globais persistentes de 50 usuários ativos, 50 empresas ativas e 10 emissões por dia de São Paulo. O ambiente exige identidade de banco/host, marcador demonstrativo confirmado e suporte a transações. Não foi criado marcador remoto.

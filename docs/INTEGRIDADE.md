@@ -1,5 +1,9 @@
 # Integridade e operação segura
 
+## Estado da demonstração — 16/10/2026
+
+O diagnóstico remoto somente leitura e a publicação foram concluídos. Os índices únicos necessários e o marcador demonstrativo estão preparados; o TTL foi preservado, e transações/cotas estão ativas. O responsável confirmou dados fictícios em `test` e dispensou backup. As orientações abaixo continuam aplicáveis a futuras bases e alterações; não representam bloqueios atuais. [Evidências e histórico](PUBLICACAO.md).
+
 ## Índices e base existente
 
 `tokens.tokenHash`, `companies.documento` e `users.email` possuem índices únicos. A API aguarda sua criação antes de escutar requisições e recusa a inicialização se identificar duplicidades ou formatos legados incompatíveis. Não remove índices ou registros automaticamente. `autoIndex` está desativado na conexão da aplicação.
@@ -53,7 +57,7 @@ Todos os caminhos HTTP de criação passam pelo mesmo controle, inclusive contas
 
 `GET /api/demo/limits` exige autenticação e fornece somente contagens, máximos, restante e próxima liberação. Não cria coleções ou contadores. Pode haver atualização entre a consulta e o clique; a transação sempre decide. Usuários/empresas esgotados retornam 409 (`demo_users_limit`, `demo_companies_limit`); tokens retornam 429 (`demo_tokens_daily_limit`) com `Retry-After`. Os painéis atualizam cotas após operações, a cada 30 segundos, ao voltar à aba e pelo botão de atualização. Falha de consulta mantém consultas disponíveis e impede iniciar novas criações pela interface.
 
-O diagnóstico somente leitura inclui topologia, capacidade, datas legadas e contador diário; não autoriza sua correção. `demoquotas` utiliza somente o índice padrão `_id`, sem novo índice personalizado/TTL. Sua criação e primeiras escritas ocorrerão apenas com operações demonstrativas autorizadas após deploy; nenhum documento remoto foi criado nesta implementação.
+O diagnóstico somente leitura inclui topologia, capacidade, datas legadas e contador diário; não autoriza sua correção. `demoquotas` utiliza somente o índice padrão `_id`, sem novo índice personalizado/TTL. Na publicação de 16/10/2026, as operações demonstrativas autorizadas já efetuaram suas primeiras escritas. Em uma nova base, a criação e as escritas iniciais ocorrem dentro dessas transações; o diagnóstico permanece somente leitura.
 
 Referência: [transações do driver MongoDB](https://www.mongodb.com/docs/drivers/node/current/crud/transactions/).
 

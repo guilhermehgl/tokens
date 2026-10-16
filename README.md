@@ -33,6 +33,22 @@ O fluxo central é **cadastrar empresa → gerar token para uma NF → copiar c�
 
 </details>
 
+## Funcionamento original e demonstração pública
+
+O Portal de Tokens nasceu de uma necessidade empresarial real: controlar a retirada de mercadorias vinculadas a notas fiscais. No fluxo original, o vendedor identifica a empresa e a NF, solicita um código e o sistema o associa à retirada. O código pode ser encaminhado ao contato da empresa por e-mail ou WhatsApp. O destinatário o apresenta na retirada; o verificador informa o token, a aplicação verifica sua validade e impede reutilização. As operações relevantes ficam na auditoria.
+
+| Característica | Solução original | Demonstração pública |
+| --- | --- | --- |
+| Geração vinculada à empresa e NF | Implementada | Disponível |
+| E-mail | Nodemailer/SMTP e HTML com MJML implementados | Desabilitado no fluxo |
+| WhatsApp | Vonage Messages API, texto e imagem com legenda implementados | Desabilitado no fluxo |
+| Exibição e cópia do código na tela | Adaptação para o portfólio | Disponível |
+| Validade, retirada única e auditoria | Implementadas | Disponíveis |
+
+O e-mail preserva template com código, NF e validade, validação de configuração SMTP e tratamento de falhas. O WhatsApp preserva autenticação JWT RS256, validação de telefone, composição da mensagem e tratamento de respostas/erros; a imagem é opcional conforme configuração. **Integração implementada não significa entrega certificada em produção empresarial**: testes atuais usam mocks ou transporte local; observações anteriores estão identificadas como históricas na [referência técnica](backend/WHATSAPP.md).
+
+Na demonstração, o vendedor gera e copia o código na tela, e o verificador confirma a retirada; a recusa de reutilização e a auditoria permanecem ativas. **Não há envio real de e-mail ou WhatsApp.** Os serviços, templates, validações e tratamentos de erro continuam no repositório, desconectados da geração. Adicionar credenciais ou forçar outro `deliveryChannel` não os ativa: a reativação exigiria alteração explícita do código. Essa adaptação evita mensagens não autorizadas e permite experimentar o portal sem depender de provedores externos.
+
 ## Tecnologias
 
 | Camada | Tecnologias |
@@ -70,11 +86,11 @@ Os limites conhecidos — incluindo JWT em localStorage, limitadores auxiliares 
 
 ## Demonstração e acessos
 
-[Visualizar a interface hospedada](https://tokens-theta-dun.vercel.app/).
+[Experimentar a demonstração pública](https://tokens-theta-dun.vercel.app/).
 
-**O fluxo completo ainda depende da atualização do backend hospedado.** A versão corrigida foi validada localmente; não trate o link como demonstração ponta a ponta aprovada. A execução local abaixo é a alternativa para experimentar o fluxo. [Estado das verificações e publicação](docs/PUBLICACAO.md).
+Frontend e backend foram publicados em `9360622`; o PR #1 foi integrado à `master` em `8cadd15`, com conteúdo equivalente e CI aprovado. Em 16/10/2026, foram validados os três perfis, CRUD demonstrativo, auditoria, geração/cópia, retirada e recusa de reutilização. Nesta revisão, os três logins e a consulta das cotas responderam corretamente, sem criar ou alterar registros. [Evidências e histórico da publicação](docs/PUBLICACAO.md).
 
-As contas são públicas intencionalmente. Use apenas informações fictícias; não reutilize essas senhas em contas reais.
+Qualquer visitante pode utilizar as três contas hospedadas abaixo para experimentar a aplicação. Elas são públicas intencionalmente e protegidas contra edição, redefinição de senha e exclusão. Use apenas informações fictícias; não reutilize essas senhas em contas reais.
 
 | Perfil | Ambiente hospedado | Seed local |
 | --- | --- | --- |
@@ -85,7 +101,13 @@ As contas são públicas intencionalmente. Use apenas informações fictícias; 
 
 As contas hospedadas dependem da disponibilidade da API. As contas locais são criadas pelo seed; não substituem as hospedadas. Previews da Vercel também precisam de uma API compatível.
 
-Para experimentar a versão corrigida: entre como vendedor, escolha uma empresa fictícia, gere um token para uma NF de nove dígitos (ex.: `000000101`) e copie o código. Saia, entre como verificador e confirme a retirada. Repita a verificação para conferir a recusa de reutilização; consulte a auditoria como administrador.
+| Acesso | O que experimentar |
+| --- | --- |
+| Administrador | Criar vendedores/verificadores fictícios; editar, redefinir senha e excluir usuários permitidos; editar empresas permitidas; consultar auditoria e limites. |
+| Vendedor | Cadastrar empresa fictícia, gerar um token para uma NF de nove dígitos (ex.: `000000101`) e copiar o código na tela. |
+| Verificador | Informar o código e confirmar a retirada; repetir para conferir a recusa; consultar pendências e retiradas do dia. |
+
+Saia de um perfil antes de entrar no próximo. Use somente dados fictícios; registros iniciais e contas públicas permanecem protegidos. A demonstração é compartilhada: **50 usuários ativos, 50 empresas ativas e 10 tokens por dia**, com renovação da cota diária à meia-noite de São Paulo. As contagens atuais aparecem nos painéis.
 
 ## Executar localmente
 
@@ -116,7 +138,7 @@ npm start
 
 O seed aceita banco vazio ou com marcador conhecido e nome terminado em `_demo`. É idempotente: não apaga dados nem redefine senhas existentes. Frontend em `http://localhost:5173`, API em `http://localhost:3003/api` e health check em `/api/health`.
 
-`VITE_DEMO_ACCOUNTS` é uma configuração pública de apresentação: `local` mostra as contas do seed; `public`, as contas hospedadas com aviso de disponibilidade. Ausente ou desconhecida, não mostra credenciais. Não altera autenticação. Para previews sem API compatível, deixe-a vazia. Alterações de build hospedado dependem de autorização; nenhuma variável externa foi alterada nesta etapa.
+`VITE_DEMO_ACCOUNTS` é uma configuração pública de apresentação: `local` mostra as contas do seed; `public`, as contas hospedadas com aviso de disponibilidade. Ausente ou desconhecida, não mostra credenciais. Não altera autenticação. Para previews sem API compatível, deixe-a vazia. A configuração é incorporada ao build; alterações na hospedagem exigem autorização própria.
 
 Para bancos existentes, consulte o [diagnóstico somente leitura e cuidados com índices](docs/INTEGRIDADE.md) antes de iniciar o servidor. A inicialização pode criar índices; não é um diagnóstico remoto seguro.
 
@@ -134,15 +156,7 @@ O teste backend inclui a compilação TypeScript. Os testes de integração HTTP
 
 Os testes frontend verificam utilitários de sessão, cópia, telefone, entrega na tela e orientações de acesso por ambiente. Não substituem validação visual e de interação no navegador.
 
-O [workflow de qualidade](.github/workflows/ci.yml) executa testes, builds e auditorias de dependências de produção em Node 22 e 24. O resultado do commit deve ser conferido no [PR #1](https://github.com/guilhermehgl/tokens/pull/1) ou no [GitHub Actions](https://github.com/guilhermehgl/tokens/actions). O workflow não contém deploy; as integrações das hospedagens possuem automações próprias.
-
-## Integrações implementadas
-
-Nodemailer/SMTP e templates MJML implementam e-mail; Vonage Messages API implementa WhatsApp com autenticação JWT RS256, validações e tratamento de respostas e erros.
-
-Essas implementações estão preservadas para referência técnica, **desconectadas da geração na versão corrigida**. O token é exibido na tela e as opções de envio permanecem desabilitadas. Informar `email` ou `whatsapp` na requisição não ativa os provedores. Os testes não comprovam entrega real; o backend antigo hospedado ainda precisa ser atualizado antes de afirmar esse comportamento publicamente.
-
-[Detalhes das integrações e histórico dos testes](backend/WHATSAPP.md).
+O [workflow de qualidade](.github/workflows/ci.yml) executa testes, builds e auditorias de dependências de produção em Node 22 e 24. A versão integrada possui 86 testes (70 backend e 16 frontend); o [CI do merge](https://github.com/guilhermehgl/tokens/actions/runs/38955282059) passou em Node 22 e 24. Consulte o [GitHub Actions](https://github.com/guilhermehgl/tokens/actions) para o resultado de cada revisão posterior. O workflow não contém deploy; as integrações das hospedagens possuem automações próprias.
 
 ## Documentação adicional
 
@@ -150,7 +164,7 @@ Essas implementações estão preservadas para referência técnica, **desconect
 | --- | --- |
 | [API](docs/API.md) | Contratos, respostas e exemplos dos principais endpoints |
 | [Integridade](docs/INTEGRIDADE.md) | Índices, concorrência, segurança e limitações |
-| [Deploy](docs/DEPLOY.md) | Publicação, backup, rollback e integração segura à master |
+| [Deploy](docs/DEPLOY.md) | Estado publicado, cuidados para futuras publicações e histórico |
 | [Publicação](docs/PUBLICACAO.md) | Evidências datadas e limites da validação hospedada |
 | [Frontend](frontend/README.md) | Desenvolvimento e configuração pública da interface |
 

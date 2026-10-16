@@ -10,7 +10,7 @@ export function demoAccounts(environment) {
     label: 'Contas públicas da demonstração hospedada',
     emails: ['admin@admin.com', 'vendedor@vendedor.com', 'verificador@verificador.com'],
     password: '123$qwer',
-    guidance: 'O fluxo completo depende da atualização do backend hospedado. Estas contas não garantem acesso em previews; confira se a API conectada é compatível. Use somente dados fictícios.',
+    guidance: 'A demonstração pública permite gerar e verificar códigos na tela, sem envio de mensagens. Estas contas não garantem acesso em previews; confira se a API conectada é compatível. Use somente dados fictícios.',
   };
   return {
     label: 'Acessos de demonstração',
