@@ -1,10 +1,11 @@
 import React, { useState, useContext } from "react";
-import axios from "axios";
+import axios from "../api/client";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import "./login.css"; // CSS específico para a tela de login
 import img from "../assets/img-login.png"
+import { demoAccounts } from "../utils/demoAccounts";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -14,9 +15,10 @@ export default function Login() {
   const [modalMessage, setModalMessage] = useState(null);
 
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext);
+  const { login, sessionMessage } = useContext(AuthContext);
 
   const API_URL = import.meta.env.VITE_API_URL || '/api';
+  const demoHelp = demoAccounts(import.meta.env.VITE_DEMO_ACCOUNTS);
 
   const handleLogin = async (e) => {
     e?.preventDefault();
@@ -35,7 +37,7 @@ export default function Login() {
       const { token, user } = response.data;
 
       if (!token || !user) {
-        console.error("Token ou usuário não recebidos corretamente:", response.data);
+        console.error("Token ou usuário não recebidos corretamente:");
         setModalMessage("Erro no login. Verifique o console.");
         setLoading(false);
         return;
@@ -60,7 +62,7 @@ export default function Login() {
 
       setLoading(false);
     } catch (error) {
-      console.error("Erro no login:", error.response?.data || error.message);
+      console.error("Erro no login:");
       setModalMessage(error.response?.data?.message || "Credenciais inválidas ou erro no servidor.");
       setLoading(false);
     }
@@ -74,6 +76,7 @@ export default function Login() {
 
       <div className="login-form-container">
         <h1>Acessar o portal</h1>
+        {sessionMessage && <p role="status">{sessionMessage}</p>}
         <form onSubmit={handleLogin} className="login-form">
           <input
             type="email"
@@ -101,20 +104,18 @@ export default function Login() {
           <button type="submit" disabled={loading}>
             {loading ? "Entrando..." : "Entrar"}
           </button>
+          {modalMessage && <p className="login-error" role="alert">{modalMessage}</p>}
         </form>
+        <details className="demo-help">
+          <summary>Como experimentar a demonstração</summary>
+          <p>{demoHelp.label}</p>
+          {demoHelp.emails.length > 0 && <p>Use {demoHelp.emails.join(", ")}.</p>}
+          {demoHelp.password && <p>Senha: <code>{demoHelp.password}</code></p>}
+          <p>{demoHelp.guidance}</p>
+        </details>
       </div>
 
-      {/* Modal de mensagem */}
-      {modalMessage && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <p>{modalMessage}</p>
-            <button className="form-button" onClick={() => setModalMessage(null)}>
-              OK
-            </button>
-          </div>
-        </div>
-      )}
+
 
     </div>
   );

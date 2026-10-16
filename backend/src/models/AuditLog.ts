@@ -10,7 +10,7 @@ export interface IAuditInfo {
   nfNumber?: string;
   tokenId?: string;
   expiresAt?: Date;
-  [key: string]: any; // permite outros dados adicionais
+  [key: string]: unknown;
 }
 
 export interface IAuditLog extends Document {

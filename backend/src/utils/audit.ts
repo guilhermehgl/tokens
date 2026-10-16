@@ -1,5 +1,6 @@
 import AuditLog, { IAuditLog, IAuditInfo } from "../models/AuditLog";
 import { Types } from "mongoose";
+import { sanitize } from "./sanitize";
 
 export const logAction = async (
   action: string,
@@ -12,11 +13,13 @@ export const logAction = async (
       action,
       performedBy: new Types.ObjectId(performedBy),
       targetType,
-      info: details || {},
+      info: sanitize(details || {}) as IAuditInfo,
     };
 
     await AuditLog.create(log);
+    return true;
   } catch (error) {
-    console.error("Erro ao registrar auditoria:", error);
+    console.error(JSON.stringify({ event: "AUDIT_WRITE_FAILED", action, targetType }));
+    return false;
   }
 };

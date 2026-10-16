@@ -1,57 +1,67 @@
-// src/middleware/rateLimit.ts
 import { Request, Response, NextFunction } from "express";
-
-// Estrutura para armazenar contagem de requisições por IP
 interface RateRecord {
   count: number;
-  firstRequest: number; // timestamp do primeiro request na janela
-  blockedUntil?: number;
+  firstRequest: number;
+  blockedUntil: number;
 }
-
-// Função para criar limiter
-function createMemoryLimiter(maxRequests: number, windowSeconds: number, blockSeconds: number) {
-  // Cada regra mantém seu próprio contador: tráfego geral não pode consumir a
-  // cota específica de login/verificação.
-  const memoryStore: Record<string, RateRecord> = {};
-
-  return (req: Request, res: Response, next: NextFunction) => {
-    const ip = req.ip || "unknown-ip";
-    const now = Date.now();
-
-    let record = memoryStore[ip];
-
-    if (record?.blockedUntil && now < record.blockedUntil) {
-      const retryAfter = Math.ceil((record.blockedUntil - now) / 1000);
-      res.setHeader("Retry-After", String(retryAfter));
-      return res.status(429).json({ message: `Muitas requisições. Tente novamente em ${retryAfter}s.` });
-    }
-
-    if (!record) {
-      record = { count: 1, firstRequest: now };
-      memoryStore[ip] = record;
-      return next();
-    }
-
-    // Resetar contagem se janela expirar
-    if (now - record.firstRequest > windowSeconds * 1000) {
-      record.count = 1;
-      record.firstRequest = now;
-      return next();
-    }
-
-    record.count += 1;
-
-    if (record.count > maxRequests) {
-      record.blockedUntil = now + blockSeconds * 1000;
-      res.setHeader("Retry-After", String(blockSeconds));
-      return res.status(429).json({ message: `Muitas requisições. Tente novamente em ${blockSeconds}s.` });
-    }
-
-    return next();
+export function createMemoryLimiter(
+  maxRequests: number,
+  windowSeconds: number,
+  blockSeconds: number,
+  key = (req: Request) => req.ip || "unknown",
+  now = Date.now,
+  maxKeys = 10000,
+) {
+  const store = new Map<string, RateRecord>();
+  const sweep = () => {
+    const time = now();
+    for (const [ip, record] of store)
+      if (
+        time >=
+        Math.max(
+          record.firstRequest + windowSeconds * 1000,
+          record.blockedUntil,
+        )
+      )
+        store.delete(ip);
   };
+  const timer = setInterval(sweep, Math.min(windowSeconds * 1000, 60000));
+  timer.unref();
+  const limiter = (req: Request, res: Response, next: NextFunction) => {
+    const time = now(),
+      ip = key(req);
+    let record = store.get(ip);
+    const reject = (seconds: number) => {
+      res.setHeader("Retry-After", String(Math.max(1, seconds)));
+      return res
+        .status(429)
+        .json({
+          message: "Muitas requisições. Aguarde antes de tentar novamente.",
+        });
+    };
+    if (record && time < record.blockedUntil)
+      return reject(Math.ceil((record.blockedUntil - time) / 1000));
+    if (!record || time >= record.firstRequest + windowSeconds * 1000) {
+      if (!record && store.size >= maxKeys) {
+        sweep();
+        if (store.size >= maxKeys) return reject(windowSeconds);
+      }
+      record = { count: 0, firstRequest: time, blockedUntil: 0 };
+      store.set(ip, record);
+    }
+    record.count++;
+    if (record.count > maxRequests) {
+      record.blockedUntil = time + blockSeconds * 1000;
+      return reject(blockSeconds);
+    }
+    next();
+  };
+  return Object.assign(limiter, {
+    sweep,
+    size: () => store.size,
+    dispose: () => clearInterval(timer),
+  });
 }
-
-// Rate limits
-export const rateLimitGeneral = createMemoryLimiter(100, 60, 60);    // 100 req/min, bloqueio 60s
-export const rateLimitLogin   = createMemoryLimiter(5, 60, 15 * 60); // 5 req/min, bloqueio 15min
-export const rateLimitVerify  = createMemoryLimiter(10, 60, 10 * 60); // 10 req/min, bloqueio 10min
+export const rateLimitGeneral = createMemoryLimiter(100, 60, 60);
+export const rateLimitLogin = createMemoryLimiter(5, 60, 900);
+export const rateLimitVerify = createMemoryLimiter(10, 60, 600);

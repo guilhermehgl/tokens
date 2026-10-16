@@ -1,32 +1,95 @@
 # Portal de Tokens
 
-Aplicação full stack para controlar a retirada de pedidos por códigos de uso único. Adaptada de um cenário empresarial para apresentação pública, com identidade neutra e dados fictícios.
+Sistema Full Stack para geração e validação de códigos de retirada de pedidos, desenvolvido com React, Node.js, TypeScript e MongoDB.
+
+A aplicação organiza o trabalho de vendedores, verificadores e administradores, com controle de acesso, códigos de uso único e rastreabilidade das operações. Desenvolvida a partir de uma necessidade empresarial real e adaptada para demonstração pública e portfólio.
+
+![Painel do vendedor com token gerado, botão de cópia e confirmação de que nenhuma mensagem externa foi enviada](docs/images/generation.jpg)
+
+*Captura real da versão local corrigida, com dados fictícios. Não comprova o funcionamento do ambiente hospedado.*
 
 ## Funcionalidades
 
-| Perfil | Acesso |
+| Perfil | O que permite fazer |
 | --- | --- |
-| Administrador | Usuários, empresas e auditoria |
-| Vendedor | Cadastro de empresas e geração de tokens vinculados à NF |
-| Verificador | Validação de tokens, retiradas e pendências |
+| Administrador | Consultar usuários, empresas, auditoria e cotas. Criar, editar, redefinir senha e excluir usuários criados na demonstração; editar empresas permitidas. As contas públicas e os registros iniciais são protegidos. |
+| Vendedor | Cadastrar empresas e gerar códigos de retirada vinculados a notas fiscais. Visualizar e copiar o token gerado. |
+| Verificador | Validar códigos e confirmar retiradas; consultar pendências e tokens utilizados no dia. |
 
-Existe uma única aplicação, com login normal por e-mail e senha. Não há seleção de modo nem atalhos de acesso na tela. JWT, bcrypt e permissões por perfil permanecem ativos.
+O fluxo central é **cadastrar empresa → gerar token para uma NF → copiar código → verificar retirada**. O administrador pode criar vendedores e verificadores com e-mails fictícios terminados em `.test` ou `.example`, sem criar outros administradores. Um código vencido ou já utilizado não libera uma segunda retirada. As operações relevantes geram registros de auditoria; os dados de entrada são validados pela API.
 
-## Acessos para demonstração
+<details>
+<summary>Mais telas da aplicação</summary>
 
-| Perfil | Login | Senha |
+| Login | Administração |
+| --- | --- |
+| ![Formulário de acesso ao Portal de Tokens](docs/images/login.jpg) | ![Painel administrativo com consulta de usuários](docs/images/admin.jpg) |
+
+| Verificação | Auditoria |
+| --- | --- |
+| ![Painel do verificador com consulta de retiradas](docs/images/verification.jpg) | ![Consulta administrativa dos registros de auditoria](docs/images/audit.jpg) |
+
+[Ver o modal em celular](docs/images/mobile.jpg). As capturas utilizam banco temporário e dados fictícios. A captura de login registra a versão anterior às orientações de acesso por ambiente e apresentação de auditoria de usuários.
+
+</details>
+
+## Tecnologias
+
+| Camada | Tecnologias |
+| --- | --- |
+| Interface | React 19, JavaScript, Vite 7, React Router, Axios e CSS |
+| API | Node.js, Express 5 e TypeScript em modo estrito |
+| Persistência e acesso | MongoDB, Mongoose, JWT, bcrypt e Helmet |
+| Qualidade | Runner de testes do Node.js, MongoDB temporário e GitHub Actions |
+| Integrações preservadas | Nodemailer/SMTP, MJML e Vonage Messages API |
+
+## Arquitetura e decisões técnicas
+
+```mermaid
+flowchart LR
+  A[Frontend React] -->|HTTP + Bearer JWT| B[API Express]
+  B --> C[Autenticação e autorização]
+  C --> D[Controllers e serviço de tokens]
+  D --> E[(MongoDB)]
+  D --> F[Auditoria sanitizada]
+  F --> E
+```
+
+As rotas verificam sessão, perfil e limites de requisições. Controllers validam os contratos HTTP, o serviço de tokens trata colisões e os modelos definem estrutura e índices. O frontend compartilha formulários, tabelas e diálogos, com painéis carregados sob demanda.
+
+- **Códigos e armazenamento:** seis caracteres, pelo menos um número e geração com `crypto.randomInt`. Somente o SHA-256 é persistido. O código aparece no resultado autorizado, sem ser salvo em URL ou localStorage. Colisões são tratadas com índice único e até cinco tentativas.
+- **Retirada única:** `findOneAndUpdate` condiciona o consumo ao hash, ao estado não utilizado e à validade futura. Entre retiradas concorrentes com o mesmo código, apenas uma vence.
+- **Expiração:** validade de 30 dias verificada na operação; o índice TTL remove registros vencidos de forma assíncrona. A unicidade cobre os registros ainda retidos.
+- **Autenticação e autorização:** JWT, senhas com bcrypt e permissões verificadas no backend. A existência, atividade e o perfil atual do usuário são revalidados. As três contas públicas e as contas iniciais do seed são protegidas; usuários criados na demonstração são identificados pelo servidor e podem ser gerenciados.
+- **Auditoria:** registros sanitizados na escrita e na leitura. A gravação é best effort: uma falha secundária não transforma uma retirada efetivada em falso erro, mas pode deixar o histórico incompleto.
+- **Proteções HTTP e validação:** limites por IP e conta demonstrativa, CORS explícito, Helmet, JSON limitado e validação de cadastros. CPF/CNPJ são verificados por tipo e formato, sem consulta oficial ou dígitos verificadores.
+
+As cotas globais são persistentes no MongoDB: até **50 usuários ativos**, **50 empresas ativas** e **10 tokens por dia**, compartilhados por todos os visitantes. O dia muda à meia-noite de **America/Sao_Paulo**. Transações impedem ultrapassar a capacidade com requisições concorrentes; reiniciar o servidor ou mudar de conta/IP não libera a cota. Consultas, edições permitidas e verificação continuam disponíveis quando a capacidade acaba. As cotas exibidas nos painéis vêm da API.
+
+Os limites conhecidos — incluindo JWT em localStorage, limitadores auxiliares por processo, auditoria não transacional e demonstração compartilhada — estão em [Integridade e segurança](docs/INTEGRIDADE.md).
+
+## Demonstração e acessos
+
+[Visualizar a interface hospedada](https://tokens-theta-dun.vercel.app/).
+
+**O fluxo completo ainda depende da atualização do backend hospedado.** A versão corrigida foi validada localmente; não trate o link como demonstração ponta a ponta aprovada. A execução local abaixo é a alternativa para experimentar o fluxo. [Estado das verificações e publicação](docs/PUBLICACAO.md).
+
+As contas são públicas intencionalmente. Use apenas informações fictícias; não reutilize essas senhas em contas reais.
+
+| Perfil | Ambiente hospedado | Seed local |
 | --- | --- | --- |
-| Administrador | admin@demo.local | DemoTokens!2026 |
-| Vendedor | vendedor@demo.local | DemoTokens!2026 |
-| Verificador | verificador@demo.local | DemoTokens!2026 |
+| Administrador | admin@admin.com | admin@demo.local |
+| Vendedor | vendedor@vendedor.com | vendedor@demo.local |
+| Verificador | verificador@verificador.com | verificador@demo.local |
+| Senha compartilhada | `123$qwer` | `DemoTokens!2026` |
 
-As contas acima são criadas pelo seed de preparação, descrito abaixo. Não existe autenticação especial: digite as credenciais no formulário de login. As contas compartilhadas são protegidas contra alteração e exclusão para manter o acesso disponível.
+As contas hospedadas dependem da disponibilidade da API. As contas locais são criadas pelo seed; não substituem as hospedadas. Previews da Vercel também precisam de uma API compatível.
+
+Para experimentar a versão corrigida: entre como vendedor, escolha uma empresa fictícia, gere um token para uma NF de nove dígitos (ex.: `000000101`) e copie o código. Saia, entre como verificador e confirme a retirada. Repita a verificação para conferir a recusa de reutilização; consulte a auditoria como administrador.
 
 ## Executar localmente
 
-Requisitos: Node.js 24.15+ (linha 24) ou 22.22.2+, npm e MongoDB disponível.
-
-Na primeira instalação:
+Requisitos: Node.js 24.15+ na linha 24 ou 22.22.2+ na linha 22, npm e MongoDB local e isolado **com replica set**, necessário para as transações demonstrativas. O CI cobre Node 22 e 24. Não utilize banco empresarial nos exemplos ou no seed.
 
 ```powershell
 npm run setup
@@ -35,60 +98,64 @@ Copy-Item frontend/.env.example frontend/.env
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Não sobrescreva arquivos .env existentes. No backend/.env configure MONGO_URI para seu banco e JWT_SECRET com o segredo gerado (mínimo 32 caracteres). O exemplo usa MongoDB local em mongodb://127.0.0.1:27017/portal_tokens_demo. No frontend/.env use VITE_API_URL=/api para o proxy local.
+Se os arquivos `.env` já existirem, preserve-os. Configure no backend `MONGO_URI=mongodb://127.0.0.1:27017/portal_tokens_demo` e `JWT_SECRET` com o valor aleatório gerado (mínimo 32 caracteres). Para ativar as cotas e o CRUD demo, mantenha `DEMO_ENABLED=true`, `DEMO_DB_NAME=portal_tokens_demo` e `DEMO_DB_HOST=127.0.0.1` do exemplo, após conferir o banco isolado. O seed local cria o marcador demonstrativo exigido na inicialização; ele não deve ser criado automaticamente em uma base remota. No frontend, use `VITE_API_URL=/api` e `VITE_DEMO_ACCOUNTS=local`. Não são necessárias credenciais SMTP/Vonage.
 
-Para preparar as contas e empresas fictícias, execute uma vez:
+Prepare um replica set local antes do seed. Exemplo para uma instalação local do MongoDB (terminal dedicado; diretório de dados exclusivo da demonstração):
+
+```powershell
+New-Item -ItemType Directory -Force .local-mongo-demo
+mongod --replSet portalDemo --dbpath .local-mongo-demo --bind_ip 127.0.0.1 --port 27017
+```
+
+Em outro terminal, inicialize uma única vez com `mongosh --host 127.0.0.1 --eval "rs.initiate()"`. Se já usa um replica set local, preserve-o e confira a URI. Nunca execute esses comandos no Atlas.
 
 ```powershell
 npm --prefix backend run seed
-```
-
-O seed é idempotente, não apaga dados nem redefine senhas existentes. Ele aceita um banco vazio ou já identificado pelo seu marcador; recusa bases preexistentes com dados sem esse marcador. Essa preparação não é outra forma de iniciar o aplicativo.
-
-Sempre inicie o projeto pela pasta raiz com:
-
-```powershell
 npm start
 ```
 
-Frontend: http://localhost:5173. API: http://localhost:3003/api. Não existe comando separado de inicialização da demonstração ou variável APP_MODE.
+O seed aceita banco vazio ou com marcador conhecido e nome terminado em `_demo`. É idempotente: não apaga dados nem redefine senhas existentes. Frontend em `http://localhost:5173`, API em `http://localhost:3003/api` e health check em `/api/health`.
 
-## Experimentar o fluxo
+`VITE_DEMO_ACCOUNTS` é uma configuração pública de apresentação: `local` mostra as contas do seed; `public`, as contas hospedadas com aviso de disponibilidade. Ausente ou desconhecida, não mostra credenciais. Não altera autenticação. Para previews sem API compatível, deixe-a vazia. Alterações de build hospedado dependem de autorização; nenhuma variável externa foi alterada nesta etapa.
 
-1. Faça login como vendedor com as credenciais acima.
-2. Escolha uma empresa fictícia, clique em Gerar token e informe uma NF de nove dígitos, como 000000101.
-3. E-mail e WhatsApp aparecem desabilitados. Gere o código e copie-o diretamente do modal.
-4. Saia e entre como verificador; informe o código para liberar a retirada.
-5. Uma segunda utilização será recusada. Consulte as retiradas e a auditoria conforme o perfil.
+Para bancos existentes, consulte o [diagnóstico somente leitura e cuidados com índices](docs/INTEGRIDADE.md) antes de iniciar o servidor. A inicialização pode criar índices; não é um diagnóstico remoto seguro.
 
-A API sempre retorna o código ao gerador autorizado e nunca envia mensagens, mesmo se uma requisição informar e-mail ou WhatsApp como canal. O código aparece somente no resultado da geração, sem gravação no navegador ou em URLs. O banco armazena apenas seu SHA-256, validade de 30 dias e estado de uso. A verificação usa operação atômica no MongoDB para impedir duas liberações concorrentes. Respostas de geração usam Cache-Control: no-store.
-
-## Arquitetura e integrações preservadas
-
-- Frontend: React, Vite, React Router e Axios.
-- Backend: Express, TypeScript e Mongoose.
-- MongoDB: usuários, empresas, tokens e auditoria.
-- JWT e bcrypt: autenticação e senhas com hash.
-- E-mail: Nodemailer, SMTP e template MJML, preservados em backend/src/utils/email.ts e na função deliverToken de backend/src/controllers/token.controller.ts.
-- WhatsApp: Vonage Messages API, JWT RS256, validações e tratamento de erros preservados em backend/src/services/whatsapp.service.ts. Documentação: [WHATSAPP.md](backend/WHATSAPP.md).
-
-As integrações fazem parte da implementação original e permanecem no código, mas a geração não as chama. Credenciais SMTP/Vonage não são necessárias para usar o portal; preenchê-las não habilita envios. Uma futura reativação exige alterar explicitamente o fluxo no código. Aceite da Vonage não representa confirmação de entrega.
-
-## Build e hospedagem
-
-Backend: diretório backend, build npm ci --include=dev && npm run build, start npm start. Configure MONGO_URI, JWT_SECRET e CORS_ORIGINS. Health check: GET /api/health.
-
-Frontend: diretório frontend, preset Vite, build npm run build, saída dist. Para API separada use VITE_API_URL=https://api.example.com/api e inclua o domínio exato do frontend em CORS_ORIGINS. Mudanças em variáveis Vite exigem novo build. frontend/vercel.json mantém as rotas React acessíveis diretamente.
-
-## Verificação
+## Testes e CI
 
 ```powershell
 npm --prefix backend test
-npm --prefix frontend run test:delivery
-npm --prefix frontend run test:phone
+npm --prefix frontend test
 npm --prefix frontend run build
+npm --prefix backend audit
+npm --prefix frontend audit
 ```
 
-Os testes HTTP utilizam MongoDB temporário isolado; testes de SMTP/Vonage utilizam mocks e transportes locais, sem envio real. O MongoDB temporário serve somente aos testes e não é outro modo de iniciar o aplicativo.
+O teste backend inclui a compilação TypeScript. Os testes de integração HTTP usam MongoDB temporário (replica set nos testes de cotas) e cobrem autenticação, autorização, proteção das contas demo, colisões, consumo concorrente, expiração, validação e auditoria. SMTP/Vonage usam mocks ou transporte MIME local, sem envio real. A primeira execução pode baixar o binário MongoDB do fornecedor.
 
-Use dados fictícios: os cadastros são compartilhados entre visitantes conforme o perfil. Arquivos .env, chaves, dumps e histórico empresarial não devem acompanhar uma publicação. A preparação local não publica alterações no GitHub ou em servidores.
+Os testes frontend verificam utilitários de sessão, cópia, telefone, entrega na tela e orientações de acesso por ambiente. Não substituem validação visual e de interação no navegador.
+
+O [workflow de qualidade](.github/workflows/ci.yml) executa testes, builds e auditorias de dependências de produção em Node 22 e 24. O resultado do commit deve ser conferido no [PR #1](https://github.com/guilhermehgl/tokens/pull/1) ou no [GitHub Actions](https://github.com/guilhermehgl/tokens/actions). O workflow não contém deploy; as integrações das hospedagens possuem automações próprias.
+
+## Integrações implementadas
+
+Nodemailer/SMTP e templates MJML implementam e-mail; Vonage Messages API implementa WhatsApp com autenticação JWT RS256, validações e tratamento de respostas e erros.
+
+Essas implementações estão preservadas para referência técnica, **desconectadas da geração na versão corrigida**. O token é exibido na tela e as opções de envio permanecem desabilitadas. Informar `email` ou `whatsapp` na requisição não ativa os provedores. Os testes não comprovam entrega real; o backend antigo hospedado ainda precisa ser atualizado antes de afirmar esse comportamento publicamente.
+
+[Detalhes das integrações e histórico dos testes](backend/WHATSAPP.md).
+
+## Documentação adicional
+
+| Documento | Conteúdo |
+| --- | --- |
+| [API](docs/API.md) | Contratos, respostas e exemplos dos principais endpoints |
+| [Integridade](docs/INTEGRIDADE.md) | Índices, concorrência, segurança e limitações |
+| [Deploy](docs/DEPLOY.md) | Publicação, backup, rollback e integração segura à master |
+| [Publicação](docs/PUBLICACAO.md) | Evidências datadas e limites da validação hospedada |
+| [Frontend](frontend/README.md) | Desenvolvimento e configuração pública da interface |
+
+## Autor e reutilização
+
+[Guilherme Lima](https://github.com/guilhermehgl) — informações e contato profissional no perfil GitHub.
+
+O autor confirmou autorização para publicar e reutilizar o código. A licença a conceder a terceiros ainda não foi definida; nenhuma licença permissiva foi adicionada. A licença OFL das fontes permanece preservada, assim como o histórico e os assets da identidade original.

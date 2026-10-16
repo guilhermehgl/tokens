@@ -7,6 +7,7 @@ import { demoAccounts, demoPassword } from "./accounts";
 export async function seedDemo() {
   const db = mongoose.connection.db;
   if (!db) throw new Error("Banco demo não conectado.");
+  if (!db.databaseName.endsWith("_demo")) throw new Error("O nome do banco deve terminar em _demo.");
   const marker = db.collection("demo_environment");
   if (!await marker.findOne({ _id: "portal-tokens-demo-v1" as never })) {
     const collections = await db.listCollections().toArray();

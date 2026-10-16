@@ -6,6 +6,7 @@ build/
 coverage/
 .vite/
 .cache/
+.local-mongo-demo/
 *.tsbuildinfo
 
 # Logs e temporários

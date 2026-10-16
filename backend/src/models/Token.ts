@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const tokenSchema = new mongoose.Schema({
   companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
-  companyName: { type: String, required: true }, 
-  tokenHash: { type: String, required: true },
+  companyName: { type: String, required: true },
+  tokenHash: { type: String, required: true, unique: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   expiresAt: { type: Date, required: true },
   used: { type: Boolean, default: false },

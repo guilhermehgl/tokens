@@ -162,7 +162,7 @@ test('Verificação distingue inválido, vencido e utilizado sem salvar novament
 
 test('Verificação válida retorna token, cliente, NF e horário e salva uma vez', async t => {
   let saves = 0;
-  const document = { companyId: company._id, nfNumber: '000000011', expiresAt: new Date(Date.now() + 86400000), save: async () => { saves++; } };
+  const document = { companyName: company.razaoSocial, companyId: company._id, nfNumber: '000000011', expiresAt: new Date(Date.now() + 86400000), save: async () => { saves++; } };
   const consume = t.mock.method(Token, 'findOneAndUpdate', async (query, update, options) => {
     assert.equal(query.used, false);
     assert.ok(query.expiresAt.$gt instanceof Date);
@@ -196,7 +196,7 @@ test('Entradas inválidas não consultam nem consomem tokens', async t => {
 });
 
 test('Verificações concorrentes: apenas uma liberação e uma auditoria (MongoDB simulado)', async t => {
-  const document = { companyId: company._id, nfNumber: '000000011', used: false, expiresAt: new Date(Date.now() + 86400000) };
+  const document = { companyName: company.razaoSocial, companyId: company._id, nfNumber: '000000011', used: false, expiresAt: new Date(Date.now() + 86400000) };
   t.mock.method(Token, 'findOneAndUpdate', async (_query, update) => {
     if (document.used) return null;
     Object.assign(document, update.$set);

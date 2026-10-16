@@ -5,6 +5,8 @@ import readline from "readline";
 import { randomUUID } from "crypto";
 import dotenv from "dotenv";
 import { databaseUri, assertRuntime } from "../config/runtime";
+import { isDemoIdentity } from "../demo/accounts";
+import { validName, validEmail, validPassword } from "../utils/validation";
 import User from "../models/User"; // ajuste o caminho se necessário
 
 dotenv.config();
@@ -38,9 +40,10 @@ const createAdmin = async () => {
     }
 
     const nome = await question("Nome do administrador: ");
-    const email = await question("Email do administrador: ");
+    const email = (await question("Email do administrador: ")).trim().toLowerCase();
     const password = await question("Senha do administrador: ");
 
+    if (!validName(nome) || !validEmail(email) || !validPassword(password) || isDemoIdentity({ email })) throw new Error("Dados inválidos ou identidade reservada.");
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Gera UUID e hash
@@ -87,7 +90,9 @@ const changeAdminPassword = async () => {
       process.exit(0);
     }
 
+    if (isDemoIdentity(admin)) throw new Error("Conta demonstrativa protegida.");
     const newPassword1 = await question("Nova senha: ");
+    if (!validPassword(newPassword1)) throw new Error("Senha inválida.");
     const newPassword2 = await question("Confirme a nova senha: ");
     if (newPassword1 !== newPassword2) {
       console.log("As senhas não coincidem.");
@@ -125,7 +130,9 @@ const recoverAdminPassword = async () => {
       process.exit(0);
     }
 
+    if (isDemoIdentity(admin)) throw new Error("Conta demonstrativa protegida.");
     const newPassword1 = await question("Nova senha: ");
+    if (!validPassword(newPassword1)) throw new Error("Senha inválida.");
     const newPassword2 = await question("Confirme a nova senha: ");
     if (newPassword1 !== newPassword2) {
       console.log("As senhas não coincidem.");

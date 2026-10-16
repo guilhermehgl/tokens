@@ -5,6 +5,8 @@ import "./DashboardUI.css";
 
 export const roleLabels = { admin: "Administrador", vendedor: "Vendedor", verificador: "Verificador" };
 export const auditActionLabels = {
+  CREATE_USER: "Usuário criado", EDIT_USER: "Usuário alterado",
+  RESET_USER_PASSWORD: "Senha redefinida", DELETE_USER: "Usuário excluído",
   CREATE_COMPANY: "Empresa criada", EDIT_COMPANY: "Empresa editada",
   GENERATE_TOKEN: "Token gerado", VERIFY_TOKEN: "Token verificado",
 };

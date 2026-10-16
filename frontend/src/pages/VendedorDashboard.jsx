@@ -1,6 +1,6 @@
 // src/pages/VendedorDashboard.jsx
 import React, { useEffect, useState, useContext, useRef } from "react";
-import axios from "axios";
+import axios from "../api/client";
 import { FiLogOut, FiPlus, FiKey } from "react-icons/fi";
 import { AuthContext } from "../context/AuthContext";
 import { HeaderActions, Button, PageHeader, Card, Field, SearchInput, DataTable, StateMessage, Dialog } from "../components/AdminUI";
@@ -9,6 +9,8 @@ import { phoneCountries, phoneE164 } from "../utils/phone";
 import InternationalPhoneField from "../components/InternationalPhoneField";
 import TokenDeliveryOptions from "../components/TokenDeliveryOptions";
 import TokenResult from "../components/TokenResult";
+import DemoLimits from "../components/DemoLimits";
+import { useDemoLimits } from "../hooks/useDemoLimits";
 
 export default function VendedorDashboard() {
   const [generatedToken, setGeneratedToken] = useState(null);
@@ -49,6 +51,9 @@ export default function VendedorDashboard() {
   const [modalConfirm, setModalConfirm] = useState(null);
 
   const API_URL = import.meta.env.VITE_API_URL || '/api';
+  const { limits, error: limitsError, refresh: refreshLimits } = useDemoLimits(token, Boolean(user?.demoEnvironment));
+  const companiesFull = Boolean(user?.demoEnvironment) && (!limits || Boolean(limitsError) || limits.companies.remaining === 0);
+  const tokensFull = Boolean(user?.demoEnvironment) && (!limits || Boolean(limitsError) || limits.tokens.remaining === 0);
 
   // -------------------------
   // FETCH COMPANIES
@@ -68,7 +73,7 @@ export default function VendedorDashboard() {
         setCompanies([]);
       }
     } catch (err) {
-      console.error("Erro ao carregar empresas:", err);
+      console.error("Erro ao carregar empresas:");
       setModalMessage("Erro ao carregar empresas.");
     } finally {
       setLoading(false);
@@ -182,11 +187,12 @@ export default function VendedorDashboard() {
       setNewCompany({ razaoSocial: "", documento: "", emailReferencia: "" });
       fetchCompanies();
     } catch (err) {
-      console.error("Erro ao cadastrar empresa:", err);
+      console.error("Erro ao cadastrar empresa:");
       setRegistrationError(err.response?.data?.message || "Erro ao cadastrar empresa. Tente novamente.");
     } finally {
       submitting.current = false;
       setCreating(false);
+      refreshLimits();
     }
   };
 
@@ -240,6 +246,7 @@ export default function VendedorDashboard() {
     } finally {
       tokenRequests.current.delete(companyId);
       setSendingTokens(previous => ({ ...previous, [companyId]: false }));
+      refreshLimits();
     }
   };
 
@@ -260,10 +267,11 @@ export default function VendedorDashboard() {
             <Button variant="ghost" onClick={() => setModalConfirm({ message: "Tem certeza que deseja sair?", onConfirm: logout, onCancel: () => {} })}><FiLogOut size={16} aria-hidden="true" />Sair</Button>
           </HeaderActions>
           <PageHeader title="Painel do Vendedor" />
+          {user?.demoEnvironment && <DemoLimits limits={limits} error={limitsError} refresh={refreshLimits} />}
           <div className="admin-stack">
             <Card title="Empresas cadastradas" toolbar={<div className="users-list-toolbar seller-companies-toolbar">
               <SearchInput label="Pesquisar empresas por nome ou CPF/CNPJ" placeholder="Pesquisar nome ou CPF/CNPJ" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-              <Button ref={createButtonRef} variant="primary" onClick={() => { setRegistrationError(""); setPhoneError(""); setCreateOpen(true); }}><FiPlus size={16} aria-hidden="true" />Cadastrar empresa</Button>
+              <Button disabled={companiesFull} ref={createButtonRef} variant="primary" onClick={() => { setRegistrationError(""); setPhoneError(""); setCreateOpen(true); }}><FiPlus size={16} aria-hidden="true" />Cadastrar empresa</Button>
             </div>}>
               {loading ? <StateMessage loading>Carregando empresas...</StateMessage> : filteredCompanies.length > 0 ? (
                 <DataTable label="Empresas e geração de tokens" columns={["Empresa", "CPF / CNPJ", "E-mail", "Ações"]}>
@@ -273,7 +281,7 @@ export default function VendedorDashboard() {
                       <td><span className="admin-document">{company.tipoDocumento === "CNPJ" ? formatCNPJ(company.documento) : formatCPF(company.documento)}</span></td>
                       <td className="admin-secondary">{company.emailReferencia}</td>
                       <td>
-                        <div className="admin-row-actions"><Button variant="primary" className="seller-generate-token" onClick={event => {
+                        <div className="admin-row-actions"><Button disabled={tokensFull} variant="primary" className="seller-generate-token" onClick={event => {
                           tokenTriggerRef.current = event.currentTarget;
                           setTokenError("");
                           setNfNumbers(previous => ({ ...previous, [company._id]: "" }));
@@ -300,7 +308,7 @@ export default function VendedorDashboard() {
             {tokenError && <p className="company-form-error" role="alert">{tokenError}</p>}
             <div className="admin-modal-actions">
               <Button disabled={Boolean(sendingTokens[tokenCompany._id])} onClick={() => { if (!tokenRequests.current.has(tokenCompany._id)) setTokenCompany(null); }}>Cancelar</Button>
-              <Button variant="primary" type="submit" disabled={Boolean(sendingTokens[tokenCompany._id])}>{sendingTokens[tokenCompany._id] ? "Gerando..." : "Gerar token"}</Button>
+              <Button variant="primary" type="submit" disabled={tokensFull || Boolean(sendingTokens[tokenCompany._id])}>{sendingTokens[tokenCompany._id] ? "Gerando..." : "Gerar token"}</Button>
             </div>
           </form>
         </Dialog>

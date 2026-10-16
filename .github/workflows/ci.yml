@@ -1,0 +1,44 @@
+name: Qualidade do portal
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master, portfolio/tokens-quality-20261014]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            frontend/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix backend
+      - run: npm ci --prefix frontend
+      - name: Backend TypeScript e testes com MongoDB temporário
+        run: npm test --prefix backend
+      - name: Testes frontend
+        run: npm test --prefix frontend
+      - name: Build de produção frontend
+        run: npm run build --prefix frontend
+      - name: Dependências de produção
+        run: |
+          npm audit --prefix backend --omit=dev --audit-level=high
+          npm audit --prefix frontend --omit=dev --audit-level=high

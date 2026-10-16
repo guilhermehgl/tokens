@@ -44,27 +44,28 @@ test('Controller: novos cadastros CPF/CNPJ, erros e registros antigos (banco sim
   Company.findOne.mock.mockImplementation(async () => base);
   const duplicate = response();
   await createCompany({ body: { ...base, telefone: '+5531999999999' } }, duplicate);
-  assert.equal(duplicate.code, 400);
+  assert.equal(duplicate.code, 409);
   assert.equal(duplicate.body.message, 'Empresa já cadastrada.');
   t.mock.method(Company, 'find', () => ({ sort: async () => [base] }));
   const list = response();
   await listCompanies({}, list);
   assert.equal(list.body.companies[0].telefone, undefined);
+  t.mock.method(Company, 'findById', async () => base);
   t.mock.method(Company, 'findByIdAndUpdate', async (_id, changes) => ({ ...base, ...changes }));
   const update = response();
-  await updateCompany({ params: { id: 'legacy' }, body: { razaoSocial: 'Novo nome' } }, update);
+  await updateCompany({ params: { id: '507f1f77bcf86cd799439011' }, body: { razaoSocial: 'Novo nome' } }, update);
   assert.equal(update.body.company.razaoSocial, 'Novo nome');
   assert.equal(update.body.company.telefone, undefined);
 
   const phoneUpdate = response();
-  await updateCompany({ params: { id: 'legacy' }, body: { telefone: '+351912345678' } }, phoneUpdate);
+  await updateCompany({ params: { id: '507f1f77bcf86cd799439011' }, body: { telefone: '+351912345678' } }, phoneUpdate);
   assert.equal(phoneUpdate.code, 200);
   assert.equal(phoneUpdate.body.company.telefone, '+351912345678');
   assert.equal(Company.findByIdAndUpdate.mock.calls.at(-1).arguments[1].telefone, '+351912345678');
   const callsBeforeInvalid = Company.findByIdAndUpdate.mock.callCount();
   for (const telefone of [null, '', '5531999999999', '(31) 99999-9999', '+5531999']) {
     const invalidUpdate = response();
-    await updateCompany({ params: { id: 'legacy' }, body: { telefone } }, invalidUpdate);
+    await updateCompany({ params: { id: '507f1f77bcf86cd799439011' }, body: { telefone } }, invalidUpdate);
     assert.equal(invalidUpdate.code, 400);
   }
   assert.equal(Company.findByIdAndUpdate.mock.callCount(), callsBeforeInvalid);

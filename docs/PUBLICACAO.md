@@ -1,11 +1,60 @@
-# Estado da versão pública
+# Estado e histórico da publicação
 
-O portal possui um único fluxo de login e inicialização (npm start na raiz). As contas públicas estão no README e são preparadas por um seed manual idempotente. Não há APP_MODE, endpoint de configuração pública ou acesso por atalhos.
+## CRUD e cotas globais — preparação de 15/10/2026
 
-A geração sempre retorna o token na tela; e-mail e WhatsApp permanecem visíveis e desabilitados. O backend não chama os provedores, independentemente do canal solicitado. Os serviços e o template de mensagens foram preservados para referência e futura reutilização explícita.
+Esta revisão parte de `acad74e` na mesma branch e PR #1. Implementa CRUD de usuários demonstrativos marcados pelo servidor, proteção das seis identidades iniciais, edição apenas de empresas permitidas e cotas globais persistentes de 50 usuários ativos, 50 empresas ativas e 10 emissões por dia de São Paulo. O ambiente exige identidade de banco/host, marcador demonstrativo confirmado e suporte a transações. Não foi criado marcador remoto.
 
-Identidade empresarial removida dos arquivos atuais. O histórico Git antigo não foi reescrito; revise-o antes de publicar ou use um novo repositório com apenas a árvore revisada. Não publique .env, chaves, dumps ou dependências.
+Validação local: 70 testes backend (incluindo transações reais em replica set temporário) e 16 frontend aprovados; TypeScript e build Vite aprovados; auditorias de dependências de produção sem vulnerabilidades apontadas. Os 66 testes anteriores foram preservados. Concorrência, rollback, falha secundária de auditoria, TTL sem reposição de cota, reinício e mudança de dia foram testados em banco temporário.
 
-O banco é configurado por MONGO_URI. O seed recusa dados preexistentes sem o marcador de preparação e não apaga dados. Nada nesta alteração modifica bancos remotos ou constitui deploy.
+Navegador local: três perfis, criação e edição de usuário, proteção visual das contas fixas, consulta e atualização da auditoria, edição de empresa permitida, cadastro de empresa, erro de NF, geração na tela, confirmação de cópia, consumo e recusa de reutilização, consultas e viewport 390 × 844 do verificador. Redefinição de senha e exclusão foram comprovadas pelos testes HTTP automatizados; não foram submetidas pelo navegador. Corrigida atualização das listas do verificador após consumo. A fixture bloqueia provedores externos.
 
-Os testes verificam login normal, autorização, geração sem mensagens, armazenamento somente do hash, validade, consumo atômico e proteção das contas públicas. Integrações de mensagens são testadas com mocks, sem entrega real.
+Render: a leitura do painel nesta etapa ainda mostrou último sucesso `96548fe` e tentativa `eec58ac` falha, branch `master`. Detalhes de runtime/CORS e produção Vercel da inspeção anterior permanecem históricos até nova confirmação. A versão pública não foi certificada pelo teste local.
+
+O responsável confirmou que `test` contém exclusivamente dados demonstrativos e informou que ainda não existe credencial somente leitura. Portanto, diagnóstico remoto, correspondência exata do cluster, duplicidades, formatos, índices e compatibilidade transacional permanecem pendentes. Não utilizar a credencial de escrita da aplicação para esse diagnóstico. Não houve seed, inicialização do backend contra Atlas, mudanças de variáveis, índices, deploy backend ou merge nesta etapa.
+
+Publicação desta revisão, CI Node 22/24 e preview do novo SHA devem ser confirmados após push; os resultados anteriores abaixo não certificam esta revisão. O [plano de deploy](DEPLOY.md) exige backup com restauração testada, avaliação do TTL e dos dados legados, controle dos escritores antigos e aprovações específicas antes de qualquer alteração externa. Demonstração pública e integração na master continuam pendentes.
+
+## Atualização de 15/10/2026
+
+O [PR #1](https://github.com/guilhermehgl/tokens/pull/1) foi confirmado aberto, com sete commits e HEAD `eaf1131862b2058669dabf2e11d430d2479e1af2`, antes da finalização de apresentação. A `master` permanece em `eec58ac`. O CI de `eaf1131` passou em Node 22/24 nas execuções de [PR](https://github.com/guilhermehgl/tokens/actions/runs/38748769134) e [push](https://github.com/guilhermehgl/tokens/actions/runs/38748762900): 51 testes backend e 12 frontend. Esses resultados não certificam commits posteriores.
+
+O preview de `eaf1131` foi observado como Ready na etapa anterior, com a tela de login carregada. Isso não valida login remoto, geração, retirada ou compatibilidade da API. O fluxo hospedado completo continua pendente da atualização autorizada do backend. Não foram repetidos testes que gravem dados ou enviem mensagens.
+
+A inspeção somente leitura do Render confirmou o último sucesso em `96548fe` e a tentativa `eec58ac` recusada por segredo JWT abaixo do mínimo. A URI Atlas não especifica nome de banco; código/driver sem override selecionam `test`. O responsável confirmou que o banco e as quatro coleções da demonstração não contêm dados empresariais reais. A correspondência do cluster, credencial somente leitura e integridade remota ainda não foram verificadas pelo diagnóstico. Não houve conexão remota para essa verificação.
+
+A etapa de portfólio autoriza commits na branch existente, atualização do PR e preview automático da Vercel. Não autoriza merge, deploy de produção, mudanças de variáveis, Render ou MongoDB. O login agora aceita configuração pública de apresentação e, sem ela, não sugere credenciais; não foi alterada configuração externa. [Procedimento para integração segura](DEPLOY.md#integrar-o-portfólio-sem-publicar-o-backend).
+
+## Registro histórico — 14/10/2026
+
+As observações abaixo registram aquela inspeção, não representam uma nova medição de disponibilidade.
+
+Esta página separa execução local, evidências históricas e inspeção atual somente leitura. Nenhum merge, deploy manual, mudança de variável externa, migração ou alteração do banco remoto foi realizado nesta etapa.
+
+| Item | Evidência registrada em 14/10 | Conclusão naquela inspeção |
+| --- | --- | --- |
+| Frontend | `https://tokens-theta-dun.vercel.app/` responde 200; Vercel indica `master`, commit `eec58ac` | CONFIRMADA a disponibilidade da interface |
+| API efetiva | Bundle público `index-qwnw2PeN.js` contém `https://tokens-xfrp.onrender.com/api` | CONFIRMADO o destino compilado de `VITE_API_URL` |
+| Proxy | URL absoluta no bundle; `frontend/vercel.json` faz apenas fallback SPA | API chamada diretamente no Render |
+| Backend | Render `tokens`, serviço `srv-db76ku49v7es73al9l6g`, branch `master` | Último sucesso `96548feed2adc1a30af2eca625cab16e3dc851e3` |
+| Atualização recusada | Deploy `dep-db7o6gui0phs739bultg`, fonte `eec58ac`, build concluído, processo encerrado com status 1 | Log: `JWT_SECRET deve ter pelo menos 32 caracteres.` |
+| Disponibilidade API | GET `/api/health` respondeu 502, inclusive sem Origin e com Origin correto | NÃO FOI POSSÍVEL VERIFICAR os fluxos públicos nesta revisão; 502 não comprova falha de CORS |
+| CORS | Logs do deploy recusado incluem theta e a origem antiga | Configuração registrada; comportamento hospedado da versão nova ainda não validado |
+| Banco remoto | `MONGO_URI` existe no painel, mantida mascarada | Nome, isolamento, duplicidades, formatos e índices NÃO VERIFICADOS |
+
+O endereço antigo `tokens-mu.vercel.app` respondeu 404 e não é recomendado como acesso.
+
+## Causa e limites
+
+O código público do backend `96548fe` exige `deliveryChannel=email|whatsapp`; o frontend solicita `screen`. Essa combinação explica a mensagem “Escolha um canal de envio válido: e-mail ou WhatsApp.” observada na etapa anterior. O novo backend compilou, porém recusou o segredo JWT curto na inicialização. Não reduzir a validação para contornar o problema.
+
+A branch corrigida já gera exclusivamente na tela, sem invocar `deliverToken`; não há rota alternativa que habilite SMTP/Vonage. Isso está validado localmente. **Não significa que o backend antigo hospedado tenha envio externo desativado.** Não forçar canais externos remotamente.
+
+Login dos três perfis e consultas administrativas foram confirmados na etapa anterior. Nesta revisão não foram repetidos com a API em 502. As credenciais públicas foram preservadas; nenhum seed remoto, alteração de senha, exclusão ou mutação administrativa foi executado. A validação pública completa aguarda deploy especificamente autorizado.
+
+## GitHub e automação
+
+O [PR existente](https://github.com/guilhermehgl/tokens/pull/1) permanece aberto. O CI de `42083d7` passou em Node 22 e 24 ([execução](https://github.com/guilhermehgl/tokens/actions/runs/38621039452)). Esse resultado não certifica commits locais posteriores.
+
+O workflow de qualidade não contém deploy, mas **a integração Vercel cria previews ao atualizar a branch/PR**; isso ocorreu na etapa anterior. Portanto, ausência de comando manual não significa ausência de deploy automático. Render também registra Auto-Deploy para `master`.
+
+Naquela etapa os novos commits aguardavam autorização de push/preview; essa autorização foi concedida posteriormente, conforme atualização acima. A homepage não anuncia um fluxo completo aprovado. [Plano de publicação, banco e rollback](DEPLOY.md).

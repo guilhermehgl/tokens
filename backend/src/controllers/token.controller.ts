@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
 import Token from "../models/Token";
-import { Company, CompanyDocument } from "../models/Company"; 
-import { generateTokenPlain, hashToken } from "../utils/tokenUtils";
+import { Company, CompanyDocument } from "../models/Company";
+import { hashToken } from "../utils/tokenUtils";
 import { sendEmail, validateEmailConfiguration } from "../utils/email";
 import { logAction } from "../utils/audit";
+import { createUniqueToken, TokenCollisionError } from "../services/token.service";
+import { demoWrite, demoError } from "../demo/quotas";
+import { validId } from "../utils/validation";
 import mjml2html from "mjml";
 import { normalizeWhatsappPhone, validateWhatsappConfiguration, sendWhatsappText, whatsappTokenMessage } from "../services/whatsapp.service";
 
@@ -43,10 +46,10 @@ export async function deliverToken(company: CompanyDocument, nfNumber: string, p
           </mj-body>
         </mjml>
       `;
-  
+
       // Converte MJML → HTML
       const { html } = await mjml2html(mjmlTemplate);
-  
+
       // Envia email
       await sendEmail(
         company.emailReferencia,
@@ -74,34 +77,22 @@ export const generateToken = async (req: AuthRequest, res: Response) => {
 
     if (!req.userId) return res.status(401).json({ message: "Usuário não autenticado" });
     if (!["vendedor", "admin"].includes(req.userRole || "")) return res.status(403).json({ message: "Acesso negado" });
-    if (!companyId) return res.status(400).json({ message: "Informe companyId" });
+    if (!validId(companyId)) return res.status(400).json({ message: "Informe companyId" });
     if (!nfNumber) return res.status(400).json({ message: "Número da NF é obrigatório" });
     if (typeof nfNumber !== "string" || !/^\d{9}$/.test(nfNumber)) return res.status(400).json({ message: "A NF deve ter exatamente 9 dígitos." });
     const company: CompanyDocument | null = await Company.findById(companyId);
     if (!company) return res.status(404).json({ message: "Empresa não encontrada" });
 
-    // Token simples + hash
-    const plainToken = generateTokenPlain(6);
-    const tokenHash = hashToken(plainToken);
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 dias
-
-    const tokenDoc = await Token.create({
-      companyId,
-      companyName: company.razaoSocial,
-      nfNumber,
-      tokenHash,
-      createdBy: new Types.ObjectId(req.userId),
-      expiresAt
-    });
-
+    const expiresAt = new Date(Date.now() + 30 * 86400000);
+    const { plainToken, tokenDoc } = await demoWrite("tokens", (session, issuedAt) => createUniqueToken({ companyId, companyName: company.razaoSocial, nfNumber, createdBy: req.userId!, expiresAt, ...(issuedAt ? { createdAt: issuedAt } : {}) }, session));
     tokenCreated = true;
     await logAction("GENERATE_TOKEN", req.userId, "Token", { companyId, companyName: company.razaoSocial, nfNumber, expiresAt, deliveryChannel: "screen", role: req.userRole });
     res.setHeader("Cache-Control", "no-store");
     return res.json({ success: true, token: plainToken, tokenId: tokenDoc._id, expiresAt, deliveryChannel: "screen", message: "Token gerado. Copie o código exibido na tela." });
   } catch (error) {
-
+    if (demoError(res, error)) return;
     console.error("Falha ao gerar token.", { tokenCreated });
-    res.status(500).json({ message: "Não foi possível gerar o token.", tokenCreated });
+    res.status(error instanceof TokenCollisionError ? 503 : 500).json({ message: "Não foi possível gerar o token. Tente novamente mais tarde.", tokenCreated });
   }
 };
 
@@ -135,8 +126,8 @@ export const verifyToken = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ code: "invalid_token", message: "Não foi possível validar este token. A retirada não foi liberada." });
     }
 
-    const company: CompanyDocument | null = await Company.findById(tokenDoc.companyId);
-    const companyName = company ? company.razaoSocial : "Empresa não encontrada";
+    // Snapshot já retornado pela operação atômica; nenhuma consulta secundária pode invalidar o sucesso.
+    const companyName = tokenDoc.companyName;
 
     // 🔍 Auditoria — corrigida e padronizada
     await logAction("VERIFY_TOKEN", req.userId, "Token", {
@@ -146,9 +137,7 @@ export const verifyToken = async (req: AuthRequest, res: Response) => {
       usedAt: tokenDoc.usedAt,
       role: req.userRole,
       ip:
-        req.ip ||
-        req.headers["x-forwarded-for"] ||
-        req.socket.remoteAddress,
+        req.ip,
     });
 
     res.json({
@@ -184,7 +173,7 @@ export const getVerifiedTokensToday = async (req: Request, res: Response) => {
 
     res.json({ tokens });
   } catch (error) {
-    console.error(error);
+    console.error("TOKEN_QUERY_FAILED");
     res.status(500).json({ message: "Erro interno" });
   }
 };
@@ -211,7 +200,7 @@ export const getUnverifiedTokens = async (req: Request, res: Response) => {
       expiresAt: t.expiresAt,
     })) });
   } catch (error) {
-    console.error("Erro ao buscar tokens não verificados:", error);
+    console.error("TOKEN_QUERY_FAILED");
     res.status(500).json({ message: "Erro interno" });
   }
 };
