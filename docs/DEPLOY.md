@@ -1,5 +1,24 @@
 # Publicação segura da demonstração
 
+## Publicação concluída — 16/10/2026
+
+Frontend e backend da [demonstração oficial](https://tokens-theta-dun.vercel.app/) estão em `9360622`. O PR #1 foi integrado em `8cadd15`, com conteúdo equivalente; o CI da master passou em Node 22/24. O backend iniciou em Node 24, conectou ao banco demonstrativo e respondeu 200 em `/api/health`. O problema anterior de inicialização não é um impedimento atual. [Evidências e validações](PUBLICACAO.md#estado-atual--16102026).
+
+O diagnóstico somente leitura precedeu a publicação. Foram preparados o marcador demonstrativo e os índices únicos necessários, preservando o TTL e as contas públicas. O responsável dispensou backup por se tratar de dados fictícios e descartáveis. Essa decisão vale para esta demonstração; não é orientação para bancos empresariais. Não houve seed remoto.
+
+Render permaneceu com Auto-Deploy desativado; Vercel recebeu bloqueio de build automático da `master` antes do merge. A produção foi publicada explicitamente, sem depender do merge. Esta revisão documental não altera essas configurações nem realiza deploy.
+
+## Futuras publicações
+
+1. Identificar o SHA autorizado, revisar o diff e conferir o CI. Merge, deploy e mudanças de banco/ambiente são operações distintas.
+2. Conferir a compatibilidade com a API e o banco demonstrativo; não executar seed remoto. Qualquer inicialização capaz de criar índices exige autorização que cubra esse efeito. Backup ou sua dispensa devem ser decididos pelo responsável conforme os dados envolvidos.
+3. Publicar somente com autorização, mantendo a geração na tela e sem ativar provedores. Conferir health, três perfis, cotas e consultas; testes que escrevam dados precisam estar no escopo aprovado.
+4. Não reativar automações, restaurar banco ou voltar a uma versão que envie mensagens/ignore cotas como consequência implícita de outra ação.
+
+## Plano histórico — 14 e 15/10/2026
+
+**O restante deste documento preserva o plano anterior à publicação.** Suas observações de infraestrutura e pendências eram válidas naquela data: o PR #1 já foi integrado, o diagnóstico e a publicação foram concluídos em 16/10, e o backup foi dispensado expressamente. Não usar a sequência histórica como lista de tarefas ainda pendentes. Para uma nova publicação, seguir o escopo autorizado e as orientações acima.
+
 Plano preparado em 14/10/2026, com orientações de integração ao portfólio atualizadas em 15/10/2026. Não autoriza deploy, merge, mudança de ambiente, índice, migração ou escrita remota. Não acessar Lightsail nem o sistema empresarial original.
 
 ## Integrar o portfólio sem publicar o backend

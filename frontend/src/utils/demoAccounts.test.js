@@ -14,7 +14,8 @@ test('orientações hospedadas usam contas públicas e explicam o limite dos pre
   const help = demoAccounts('public');
   assert.deepEqual(help.emails, ['admin@admin.com', 'vendedor@vendedor.com', 'verificador@verificador.com']);
   assert.equal(help.password, '123$qwer');
-  assert.match(help.guidance, /atualização do backend/);
+  assert.match(help.guidance, /gerar e verificar códigos na tela, sem envio de mensagens/);
+  assert.doesNotMatch(help.guidance, /atualização do backend/);
   assert.match(help.guidance, /não garantem acesso em previews/);
   assert.doesNotMatch(JSON.stringify(help), /demo.local|DemoTokens!/);
 });

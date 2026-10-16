@@ -2,7 +2,7 @@
 
 O código corrigido gera o token na tela. `POST /api/tokens/generate` não chama SMTP ou Vonage, independentemente de `deliveryChannel`. Não há endpoint demonstrativo de envio. A função `deliverToken` e os serviços abaixo foram preservados para referência; configurar credenciais não reativa o fluxo.
 
-Este documento distingue implementação existente, comportamento atual e verificações históricas. O backend antigo hospedado não representa necessariamente a versão corrigida; veja [Publicação](../docs/PUBLICACAO.md).
+Este documento distingue implementação existente, comportamento atual e verificações históricas. A demonstração hospedada está na versão `9360622`, publicada e validada em 16/10/2026, com geração somente na tela; veja [Publicação](../docs/PUBLICACAO.md). As observações históricas de envio abaixo não certificam funcionamento atual dos provedores.
 
 ## E-mail: Nodemailer, SMTP e MJML
 
